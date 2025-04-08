@@ -1,5 +1,5 @@
 import h5py
-import datetime
+from datetime import datetime
 
 now = datetime.now()
 current_time = now.strftime("%H:%M:%S")
