@@ -1,7 +1,6 @@
 import requests
 import h5py
 import time
-import sys
 import numpy as np
 from datetime import datetime
 import concurrent.futures
@@ -14,11 +13,14 @@ endpoints = {
     "nozzle_temp_current":"/heads/0/extruders/0/hotend/temp/current",
     "nozzle_temp_target":"/heads/0/extruders/0/hotend/temp/target",
     "time_spent_hot":"/heads/0/extruders/0/hotend/statistics/time_spent_hot",
-    "material_extruded":"/heads/0/extruders/0/hotend/statistics/material_extruded"
+    "material_extruded":"/heads/0/extruders/0/hotend/statistics/material_extruded",
+    "led":"/led",
+    "status":"/status",
+    "jerk":"/heads/0/extruders/0/feeder/jerk",
+    "acive_material":"/heads/0/extruders/0/active_material",
+    "length_remaining":"/heads/0/extruders/0/active_material/length_remaining",
+    "max_speed":"/heads/0/extruders/0/feeder/max_speed"
 }
-head_url='http://143.239.73.224/api/v1/printer/heads/0'
-extruder_url='http://143.239.73.224/api/v1/printer/heads/0/extruders/0/hotend'
-bed_temp_url='http://143.239.73.224/api/v1/printer/bed/temperature'
 
 def query(name, path):
     try:
@@ -64,7 +66,7 @@ if __name__=="__main__":
         #   Example: adding metadata to preprint
         preprint_grp.attrs['printer_model'] = 'IDK'
         preprint_grp.attrs['material'] = 'Whatever'
-        preprint_grp.attrs['layer_height'] =  1 # mm
+        preprint_grp.attrs['layer_height'] = 1  # mm
         preprint_grp.attrs['resolution'] = 'Blue sk7'
 
         #   Screenshots group could hold images as datasets in future
@@ -88,8 +90,6 @@ if __name__=="__main__":
 
                 # Check that each endpoint returned data
                 required = ["bed_temp", "head_pos", "nozzle_temp_current", "nozzle_temp_target", "time_spent_hot", "material_extruded"]
-                if any(results.get(r) is None or "error" in str(results.get(r)) for r in required):
-                    sys.exit("One or more API endpoints failed")
 
                 # Timestamp for this scan
                 timestamp = datetime.now().isoformat()
@@ -116,36 +116,48 @@ if __name__=="__main__":
                 time_spent_hot = convert_to_float(results["time_spent_hot"])
                 material_extruded = convert_to_float(results["material_extruded"])
 
+                led_status = convert_to_float(results.get("led", 0))
+                printer_status = results.get("status", {})
+                jerk = convert_to_float(results.get("jerk", 0))
+                active_material = convert_to_float(results.get("acive_material", 0))
+                length_remaining = convert_to_float(results.get("length_remaining", 0))
+                max_speed = convert_to_float(results.get("max_speed", 0))
+
                 #layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
                 scan_grp = layers_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
 
                 # Create subgroup for printer head data
                 printer_head = scan_grp.create_group('printer_head')
                 printer_head.create_dataset("position", data=position_xyz)
-                
                 printer_head.create_dataset("X_position", data=position_xyz[0])
                 printer_head.create_dataset("Y_position", data=position_xyz[1])
                 printer_head.create_dataset("Z_position", data=position_xyz[2])
 
-                # Create subgroup for extruder data (under printer head)
+                # Extruder data
                 extruder_grp = printer_head.create_group('extruder')
                 extruder_grp.create_dataset("current_nozzle_temp", data=nozzle_temp_current)
                 extruder_grp.create_dataset("target_nozzle_temp", data=nozzle_temp_target)
                 extruder_grp.create_dataset("material_extruded", data=material_extruded)
 
-                # Create subgroup for bedplate data
+                # Bedplate data
                 bedplate_grp = scan_grp.create_group('bedplate')
                 bedplate_grp.create_dataset("current_temp", data=bed_current_temp)
                 bedplate_grp.create_dataset("target_temp", data=bed_target_temp)
-                # Store bed type as a string (HDF5 can store variable-length strings)
                 dt = h5py.string_dtype(encoding='utf-8')
                 bedplate_grp.create_dataset("type", data=bed_info.get("type", "unknown"), dtype=dt)
 
-                # Create subgroup for session metadata
+                # Session metadata
                 session_grp = scan_grp.create_group("session")
-                # We can store status as a string, for example:
                 session_grp.create_dataset("status", data="printing", dtype=dt)
                 session_grp.create_dataset("time_spent_hot", data=time_spent_hot)
+
+                # Add the new endpoint data into scan
+                scan_grp.create_dataset("led_status", data=led_status)
+                scan_grp.create_dataset("printer_status", data=str(printer_status), dtype=dt)  # Store as string
+                scan_grp.create_dataset("jerk", data=jerk)
+                scan_grp.create_dataset("active_material", data=active_material)
+                scan_grp.create_dataset("length_remaining", data=length_remaining)
+                scan_grp.create_dataset("max_speed", data=max_speed)
 
                 # Set additional attributes for this scan group
                 scan_grp.attrs['print_speed'] = 50 + scannum  # example value
@@ -158,7 +170,6 @@ if __name__=="__main__":
 
             #   1 second pause before looping again
                 print('did scan: ' + str(scannum) + '  time: ' + f'{timestamp}')
-                #time.sleep(0.1)
                 
         except KeyboardInterrupt:
             print("       logging stopped")
