@@ -4,11 +4,51 @@ import time
 import sys
 import numpy as np
 from datetime import datetime
+import concurrent.futures
 
-url='http://143.239.73.224/api/v1/printer'
+base_url='http://143.239.73.224/api/v1/printer'
+
+endpoints = {
+    "bed_temp": "/bed/temperature",
+    "head_pos":"/heads/0/position",
+    "nozzle_temp_current":"/heads/0/extruders/0/hotend/temp/current",
+    "nozzle_temp_target":"/heads/0/extruders/0/hotend/temp/target",
+    "time_spent_hot":"/heads/0/extruders/0/hotend/statistics/time_spent_hot",
+    "material_extruded":"/heads/0/extruders/0/hotend/statistics/material_extruded"
+}
+head_url='http://143.239.73.224/api/v1/printer/heads/0'
+extruder_url='http://143.239.73.224/api/v1/printer/heads/0/extruders/0/hotend'
+bed_temp_url='http://143.239.73.224/api/v1/printer/bed/temperature'
+
+def query(name, path):
+    try:
+        response = requests.get(base_url + path, timeout=2)
+        return name, response.json()
+    except Exception as e:
+        return name, {"error": str(e)}
+    
+
+def convert_to_float(val):
+    if isinstance(val, dict):
+        for key in ["current", "value"]:
+            if key in val:
+                try:
+                    return float(val[key])
+                except:
+                    continue
+        return 0.0
+    try:
+        return float(val)
+    except:
+        return 0.0
 
 if __name__=="__main__":
+    
     layer = 0
+    scannum = 0
+    last_z = None
+    lasttime = 0
+
     print("logging. press ctrl+c to stop")
     
     with h5py.File("extract_info.hdf5", "w") as f:
@@ -31,64 +71,99 @@ if __name__=="__main__":
         screenshots_grp.attrs['format'] = 'JPEG'
         screenshots_grp.attrs['count'] = 0  # To be updated when adding images
 
+        layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
+
         #loop
         try:
             while True:
-                layer += 1
+                scannum += 1
 
-                response=requests.get(url)
-                if response.status_code==200:
-                    data=response.json()
+                #threading queries
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = [executor.submit(query, name, path) for name, path in endpoints.items()]
+                    results = {}
+                    for future in concurrent.futures.as_completed(futures):
+                        name, data = future.result()
+                        results[name] = data
 
-                else:
-                    sys.exit("no response from url")
+                # Check that each endpoint returned data
+                required = ["bed_temp", "head_pos", "nozzle_temp_current", "nozzle_temp_target", "time_spent_hot", "material_extruded"]
+                if any(results.get(r) is None or "error" in str(results.get(r)) for r in required):
+                    sys.exit("One or more API endpoints failed")
 
+                # Timestamp for this scan
                 timestamp = datetime.now().isoformat()
-                #   values from json
-                bed_current_temp = data["bed"]["temperature"]["current"]
-                bed_target_temp = data["bed"]["temperature"]["target"]
-                bed_type = data["bed"]["type"]
 
-                head_pos = data["heads"][0]["position"]
-                position_xyz = np.array([head_pos["x"], head_pos["y"], head_pos["z"]])
+                # Extract and convert values
+                # For bed_temp, it might be an object with "current" and "target"
+                bed_info = results["bed_temp"]
+                if isinstance(bed_info, dict):
+                    bed_current_temp = convert_to_float(bed_info.get("current", 0))
+                    bed_target_temp = convert_to_float(bed_info.get("target", 0))
+                else:
+                    bed_current_temp = convert_to_float(bed_info)
+                    bed_target_temp = 0.0
 
-                nozzle_temp = data["heads"][0]["extruders"][0]["hotend"]["temperature"]["current"]
-                material_extruded = data["heads"][0]["extruders"][0]["hotend"]["statistics"]["material_extruded"]
-                time_spent_hot = data["heads"][0]["extruders"][0]["hotend"]["statistics"]["time_spent_hot"]
+                # Head position should be a dict with x, y, z
+                head_pos = results["head_pos"]
+                try:
+                    position_xyz = np.array([float(head_pos["x"]), float(head_pos["y"]), float(head_pos["z"])])
+                except Exception as e:
+                    position_xyz = np.array([0.0, 0.0, 0.0])
 
-                status = data["status"]
+                nozzle_temp_current = convert_to_float(results["nozzle_temp_current"])
+                nozzle_temp_target = convert_to_float(results["nozzle_temp_target"])
+                time_spent_hot = convert_to_float(results["time_spent_hot"])
+                material_extruded = convert_to_float(results["material_extruded"])
 
-            #   making the actual layer with data
-                layer_grp = layers_grp.create_group(f'layer: {layer:04d} timestamp: {timestamp}')
+                #layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
+                scan_grp = layers_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
 
-            #   Subgroups in each layer
-                printer_head = layer_grp.create_group('printer_head')
-
+                # Create subgroup for printer head data
+                printer_head = scan_grp.create_group('printer_head')
                 printer_head.create_dataset("position", data=position_xyz)
-                printer_head.create_dataset("X position", data=head_pos["x"])
-                printer_head.create_dataset("Y position", data=head_pos["y"])
-                printer_head.create_dataset("Z position", data=head_pos["z"])
+                
+                printer_head.create_dataset("X_position", data=position_xyz[0])
+                printer_head.create_dataset("Y_position", data=position_xyz[1])
+                printer_head.create_dataset("Z_position", data=position_xyz[2])
 
-                extruder = printer_head.create_group('extruder')
-                extruder.create_dataset("nozzle temp", data=nozzle_temp)
-                extruder.create_dataset("material extruded", data=material_extruded)
+                # Create subgroup for extruder data (under printer head)
+                extruder_grp = printer_head.create_group('extruder')
+                extruder_grp.create_dataset("current_nozzle_temp", data=nozzle_temp_current)
+                extruder_grp.create_dataset("target_nozzle_temp", data=nozzle_temp_target)
+                extruder_grp.create_dataset("material_extruded", data=material_extruded)
 
-                bedplate = layer_grp.create_group('bedplate')
-                bedplate.create_dataset("current temp", data=bed_current_temp)
-                bedplate.create_dataset("target temp", data=bed_target_temp)
-                bedplate.create_dataset("type", data=bed_type)
+                # Create subgroup for bedplate data
+                bedplate_grp = scan_grp.create_group('bedplate')
+                bedplate_grp.create_dataset("current_temp", data=bed_current_temp)
+                bedplate_grp.create_dataset("target_temp", data=bed_target_temp)
+                # Store bed type as a string (HDF5 can store variable-length strings)
+                dt = h5py.string_dtype(encoding='utf-8')
+                bedplate_grp.create_dataset("type", data=bed_info.get("type", "unknown"), dtype=dt)
 
-                session = layer_grp.create_group("session")
-                session.create_dataset("status", data=status)
-                session.create_dataset("time spent hot", data=time_spent_hot)
+                # Create subgroup for session metadata
+                session_grp = scan_grp.create_group("session")
+                # We can store status as a string, for example:
+                session_grp.create_dataset("status", data="printing", dtype=dt)
+                session_grp.create_dataset("time_spent_hot", data=time_spent_hot)
 
-                layer_grp.attrs['print_speed'] = 50 + layer  # mm/s example
-                layer_grp.attrs['timestamp'] = f'2025-04-08T12:00:{layer:02d}'
+                # Set additional attributes for this scan group
+                scan_grp.attrs['print_speed'] = 50 + scannum  # example value
+                scan_grp.attrs['timestamp'] = timestamp
+
+                
+                now = time.perf_counter()
+                timestamp = now - lasttime
+                lasttime = now
 
             #   1 second pause before looping again
-                print('logged layer: ' + str(layer))
-                time.sleep(1)
+                print('did scan: ' + str(scannum) + '  time: ' + f'{timestamp}')
+                #time.sleep(0.1)
                 
         except KeyboardInterrupt:
             print("       logging stopped")
+
+
+    
+
 
