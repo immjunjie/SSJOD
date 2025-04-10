@@ -1,253 +1,317 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import RedirectResponse
 
-# Main_Application
-app = FastAPI(
-    docs_url="/docs/api",
-    redoc_url=None,
-    title="Ultimaker API - Swagger"
-)
-
-
+# =============================================================================
+# Cluster API
+# =============================================================================
+cluster_tags_metadata = [
+    {
+        "name": "debug",
+        "description": "Endpoint for interaction with the print job queue",
+    },
+    {
+        "name": "print_jobs",
+        "description": "Endpoint for interaction with the print job queue or with specific jobs in it.",
+    },
+    {
+        "name": "printers",
+        "description": "Endpoint for interaction with the printers",
+    },
+    {
+        "name": "cloud",
+        "description": "Endpoint for part of the Cloud/OAuth2 authentication process",
+    },
+    {
+        "name": "setting",
+        "description": "Endpoint for at runtime configuration",
+    },
+    {
+        "name": "system",
+        "description": "System configuration",
+    },
+    {
+        "name": "materials",
+        "description": " Endpoint for interaction with the materials",
+    },
+]
 
 # Cluster_Application
 cluster_app = FastAPI(
     docs_url="/docs",
     redoc_url=None,
-    title="Ultimaker - Connect API"
+    title="Ultimaker - Connect API - Simulator",
+    openapi_tags=cluster_tags_metadata
+
 )
-
-
-
-
 
 # Cluster_route
 cluster_router = APIRouter()
 
-@cluster_router.get("/jobs", tags=["print_jobs"])
-def get_jobs():
-    """Get a list of all the print jobs"""
+# ------------Debug------------
+@cluster_router.get("/debug/match_matrix/{nr}", tags=["debug"], summary="Shows a list of all the last job <-> printer matcher from the scheduler")
+def get_debug_match_matrix():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/debug/schedule/{nr}", tags=["debug"], summary="Shows a list of all the last job <-> printer matcher from the scheduler")
+def get_debug_schedule():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Print_jobs------------
+@cluster_router.get("/print_jobs", tags=["print_jobs"],summary="Return a list of all current print jobs in the queuue")
+def get_print_jobs():
+    """myDescription"""
     return {"jobs": ["Job1", "Job2"]}
 
-@cluster_router.get("/printers")
-def return_a_list_of_all_the_connected_printers():
-    return [
+@cluster_router.get("/print_jobs/history/recently_completed", tags=["print_jobs"])
+def get_print_jobs_history_recently_completed():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/print_jobs/printing", tags=["print_jobs"], summary="Return a list of all started print jobs")
+def get_print_jobs_printing():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/print_jobs/queued", tags=["print_jobs"], summary="Return a list of all queued print jobs")
+def get_print_jobs_queued():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+
+# ------------Printers------------
+@cluster_router.get("/printers", tags=["printers"], summary="Return a list of all the connected printers")
+def get_a_list_of_all_the_connected_printers():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Cloud------------
+@cluster_router.get("/cloud/authentication", tags=["cloud"])
+def get_cloud_authentication():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/cloud/cloud_connect_flow", tags=["cloud"])
+def get_cloud_cloud_connect_flow():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/cloud/redirect", tags=["cloud"])
+def get_cloud_redirect():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Setting------------
+@cluster_router.get("/setting/{identifier}", tags=["setting"])
+def get_setting_identifier():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------System------------
+@cluster_router.get("/system/authentication_mode", tags=["system"])
+def get_system_authentication_mode():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/system/current_user", tags=["system"])
+def get_system_current_user():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/system/host_name", tags=["system"], summary="Get the friendly name of the group host printer which this printer belongs to")
+def get_system_host_name():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/system/host_unique_name", tags=["system"], summary="Get the friendly name of the group host printer which this printer belongs to")
+def get_system_host_unique_name():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@cluster_router.get("/system/lastest_firmware_versions", tags=["system"])
+def get_system_lastest_firmware_versions():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Materials------------
+@cluster_router.get("/materials", tags=["materials"], summary="Return a list of all the materials")
+def get_materials():
+    """Description"""
+    return {"Message": "mySuccessful"}
+
+
+
+
+
+# =============================================================================
+# Swagger API
+# =============================================================================
+swagger_tags_metadata = [
     {
-        "uuid": "6cf81fcb-e940-41c7-a987-a3b116f7dd77",
-        "status": "idle",
-        "unique_name": "ultimakersystem-4b0fc38e95e3436caa7e0f57442aac63",
-        "ip_address": "143.239.73.224",
-        "is_host": True,
-        "firmware_version": "8.2.0.0",
-        "friendly_name": "Ultimaker-2aac63",
-        "enabled": True,
-        "reserved_by": None,
-        "machine_variant": "Ultimaker S5",
-        "build_plate": {
-            "type": "glass"
-        },
-        "air_manager": {
-            "supported": True,
-            "status": "available",
-            "filter_status": "peak_performance",
-            "filter_age": 79,
-            "filter_max_age": 1500
-        },
-        "material_station": {
-            "supported": True,
-            "status": "available",
-            "material_slots": [
-                {
-                    "slot_index": 0,
-                    "extruder_index": -1,
-                    "print_core_id": None,
-                    "material": None,
-                    "material_empty": False,
-                    "material_remaining": -1.0,
-                    "compatible": False
-                },
-                {
-                    "slot_index": 1,
-                    "extruder_index": 0,
-                    "print_core_id": "AA 0.4",
-                    "material": {
-                        "guid": "03f24266-0291-43c2-a6da-5211892a2699",
-                        "brand": "Ultimaker",
-                        "material": "Tough PLA",
-                        "color": "Black"
-                    },
-                    "material_empty": False,
-                    "material_remaining": 0.4748180780109531,
-                    "compatible": True
-                },
-                {
-                    "slot_index": 2,
-                    "extruder_index": -1,
-                    "print_core_id": None,
-                    "material": None,
-                    "material_empty": False,
-                    "material_remaining": -1.0,
-                    "compatible": False
-                },
-                {
-                    "slot_index": 3,
-                    "extruder_index": 1,
-                    "print_core_id": "AA 0.4",
-                    "material": {
-                        "guid": "e509f649-9fe6-4b14-ac45-d441438cb4ef",
-                        "brand": "Ultimaker",
-                        "material": "PLA",
-                        "color": "White"
-                    },
-                    "material_empty": False,
-                    "material_remaining": 1.0,
-                    "compatible": True
-                },
-                {
-                    "slot_index": 4,
-                    "extruder_index": 1,
-                    "print_core_id": "AA 0.4",
-                    "material": {
-                        "guid": "2433b8fb-dcd6-4e36-9cd5-9f4ee551c04c",
-                        "brand": "Ultimaker",
-                        "material": "PLA",
-                        "color": "Green"
-                    },
-                    "material_empty": False,
-                    "material_remaining": 0.8870093333333333,
-                    "compatible": True
-                },
-                {
-                    "slot_index": 5,
-                    "extruder_index": -1,
-                    "print_core_id": None,
-                    "material": None,
-                    "material_empty": False,
-                    "material_remaining": -1.0,
-                    "compatible": False
-                }
-            ]
-        },
-        "configuration": [
-            {
-                "extruder_index": 0,
-                "print_core_id": "AA 0.4",
-                "material": {
-                    "guid": "00000000-0000-0000-0000-000000000000",
-                    "brand": "empty",
-                    "material": "empty",
-                    "color": "empty"
-                }
-            },
-            {
-                "extruder_index": 1,
-                "print_core_id": "AA 0.4",
-                "material": {
-                    "guid": "00000000-0000-0000-0000-000000000000",
-                    "brand": "empty",
-                    "material": "empty",
-                    "color": "empty"
-                }
-            }
-        ],
-        "maintenance_required": False,
-        "firmware_update_status": "update_available",
-        "latest_available_firmware": "9.0.2.0",
-        "errors": [],
-        "faults": []
-    }
+        "name": "Default",
+        "description": "myDefault for redirection configuration",
+    },
+    {
+        "name": "Authentication",
+        "description": "Request and check authorization keys",
+    },
+    {
+        "name": "Materials",
+        "description": "All materials known by the printer",
+    },
+    {
+        "name": "Printer",
+        "description": "Printer state",
+    },
+    {
+        "name": "Network",
+        "description": "Network state",
+    },
+    {
+        "name": "PrintJob",
+        "description": "Currently running print",
+    },
+    {
+        "name": "System",
+        "description": "Device information",
+    },
+    {
+        "name": "History",
+        "description": "History of this printer",
+    },
+    {
+        "name": "Camera",
+        "description": "Camera image and video",
+    },
+    {
+        "name": "AirManager",
+        "description": "Air-manager peripheral",
+    },
+    {
+        "name": "Ambient_temperature",
+        "description": "",
+    },
 ]
 
+# Main_Application - Swagger
+app = FastAPI(
+    docs_url="/docs/api",
+    redoc_url=None,
+    title="Ultimaker API - Swagger - Simulator",
+    openapi_tags=swagger_tags_metadata
+)
 
+# Main-app-route
+main_router = APIRouter()
+
+# Root Path Redirection
+# ------------Default------------
+@app.get("/", tags=["Default"])
+def redirect_to_docs():
+    """Redirect to cluster API documentation"""
+    return RedirectResponse(url="/cluster-api/v1/docs")
+
+# ------------Authentication------------
+@main_router.get("/auth/check/{id}", tags=["Authentication"])
+def get_auth_check_by_id():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/auth/verify", tags=["Authentication"])
+def get_auth_verify():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Materials------------
+@main_router.get("/materials", tags=["Materials"])
+def get_materials():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/materials/{materials_guid}", tags=["Materials"])
+def get_materials_by_matirials_guid():
+    """myDescription"""
+    return {"Message": "mySuccessful"}
+
+# ------------Printer------------
+@main_router.get("/printer", tags=["Printer"])
+def get_printer():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/printer/status", tags=["Printer"])
+def get_printer_status():
+    return {"Message": "mySuccessful"}
+
+# ------------Network------------
+@main_router.get("/printer/network", tags=["Network"])
+def get_printer_network():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/printer/network/wifi_networks", tags=["Network"])
+def get_printer_network_wifi_networks():
+    return {"Message": "mySuccessful"}
+
+# ------------PrintJob------------
+@main_router.get("/print_job", tags=["PrintJob"])
+def get_print_job():
+    status = True
+    if status != True:
+        return []
+    return {"Message": "mySuccessful"}
+
+# ------------System------------
+@main_router.get("/system", tags=["System"])
+def get_system():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/system/platform", tags=["System"])
+def get_system_platform():
+    return {"Message": "mySuccessful"}
+
+# ------------History------------
+@main_router.get("/history/print_jobs", tags=["History"])
+def get_history_print_jobs():
+    return {"Message": "mySuccessful"}
+
+# ------------Camera------------
+@main_router.get("/camera", tags=["Camera"])
+def get_camera():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/camera/feed", tags=["Camera"])
+def get_camera_feed():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/camera/{index}/stream", tags=["Camera"])
+def get_camera_steam_by_index():
+    return {"Message": "mySuccessful"}
+
+@main_router.get("/camera/{index}/snapshot", tags=["Camera"])
+def get_camera_snapshot_by_index():
+    return {"Message": "mySuccessful"}
+
+# ------------AirManager------------
+@main_router.get("/airmanager", tags=["AirManager"])
+def get_camera():
+    return {"Message": "mySuccessful"}
+
+# ------------Ambient_temperature------------
+@main_router.get("/ambient_temperature", tags=["Ambient_temperature"])
+def get_camera():
+    return {"Message": "mySuccessful"}
+
+
+
+
+# =============================================================================
+
+# =============================================================================
 # Load the route into the sub-app
 cluster_app.include_router(cluster_router)
 
 # Load sub-app into main app
 app.mount("/cluster-api/v1", cluster_app)
 
-
-
-
-
-
-# Main-app-route
-main_router = APIRouter()
-
-# Root Path Redirection
-@app.get("/", tags=["default"])
-def redirect_to_docs():
-    """Redirect to cluster API documentation"""
-    return RedirectResponse(url="/cluster-api/v1/docs")
-
-@main_router.get("/status", tags=["printer"])
-def health_check():
-    """Service Health Check"""
-    return {"status": "healthy"}
-
-@main_router.get("/print_jobs")
-def get_a_list_of_all_current_print_jobs_in_the_queue():
-    status = True
-    if status != True:
-        return []
-    return [
-    {
-      "uuid": "string",
-      "name": "string",
-      "created_at": "2025-04-09T09:55:36.733Z",
-      "started": True,
-      "status": "sent_to_printer",
-      "printer_uuid": "string",
-      "configuration": [
-        {
-          "extruder_index": 0,
-          "print_core_id": "string",
-          "material": {
-            "guid": "string",
-            "brand": "string",
-            "material": "string",
-            "color": "string",
-            "version": 0,
-            "density": 0
-          }
-        }
-      ],
-      "machine_variant": "Ultimaker 3",
-      "constraints": {
-        "require_printer_name": "string"
-      },
-      "time_elapsed": 0,
-      "time_total": 0,
-      "last_seen": 0,
-      "network_error_count": 0,
-      "force": True,
-      "assigned_to": "string",
-      "owner": "string",
-      "build_plate": {
-        "type": "string"
-      },
-      "configuration_changes_required": [
-        {
-          "type_of_change": "material_change",
-          "index": 0,
-          "target_id": "string",
-          "origin_id": "string",
-          "target_name": "string",
-          "origin_name": "string"
-        }
-      ],
-      "impediments_to_printing": [
-        {
-          "translation_key": "string",
-          "severity": "string"
-        }
-      ],
-      "compatible_machine_families": [
-        "Ultimaker 3"
-      ],
-      "printed_on_uuid": "string",
-      "deleted_at": "2025-04-09T09:55:36.734Z",
-      "cloud_job_id": "string"
-    }
-  ]
-
+#
 app.include_router(main_router)
