@@ -20,7 +20,7 @@ try:
         timestamp = now - lasttime
         lasttime = now
         head_z = data["z"]
-        print(f'{loop}: {head_z}.   {timestamp}.    ctrl+c to stop')
+        print(f'{loop}: {head_z}.   {timestamp}.   {head_z}.    ctrl+c to stop')
 except KeyboardInterrupt:
             print("       logging stopped")
 

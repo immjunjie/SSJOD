@@ -2,3 +2,4 @@
 /.venv/
 /backend/extractor/merged/extract_info.hdf5
 /extract_info.hdf5
+/jumpOnLayerChange.hdf5

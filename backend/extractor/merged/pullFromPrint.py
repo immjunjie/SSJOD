@@ -48,7 +48,7 @@ if __name__=="__main__":
     
     layer = 0
     scannum = 0
-    last_z = None
+    last_z = 0.0
     lasttime = 0
 
     print("logging. press ctrl+c to stop")
@@ -110,6 +110,13 @@ if __name__=="__main__":
                     position_xyz = np.array([float(head_pos["x"]), float(head_pos["y"]), float(head_pos["z"])])
                 except Exception as e:
                     position_xyz = np.array([0.0, 0.0, 0.0])
+                current_z = float(position_xyz[2])
+                if current_z >= (last_z + 0.10) and current_z <= (last_z + 0.20) or last_z == 0:
+                    layer += 1
+                    layer_grp = layers_grp.create_group(f'layer_{layer}_timestamp_{timestamp}')
+                    print('layer change')
+                    last_z = current_z
+
 
                 nozzle_temp_current = convert_to_float(results["nozzle_temp_current"])
                 nozzle_temp_target = convert_to_float(results["nozzle_temp_target"])
@@ -124,7 +131,7 @@ if __name__=="__main__":
                 max_speed = convert_to_float(results.get("max_speed", 0))
 
                 #layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
-                scan_grp = layers_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
+                scan_grp = layer_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
 
                 # Create subgroup for printer head data
                 printer_head = scan_grp.create_group('printer_head')
@@ -160,7 +167,7 @@ if __name__=="__main__":
                 scan_grp.create_dataset("max_speed", data=max_speed)
 
                 # Set additional attributes for this scan group
-                scan_grp.attrs['print_speed'] = 50 + scannum  # example value
+                scan_grp.attrs['position_Z'] = position_xyz[2] # example value
                 scan_grp.attrs['timestamp'] = timestamp
 
                 
@@ -169,7 +176,7 @@ if __name__=="__main__":
                 lasttime = now
 
             #   1 second pause before looping again
-                print('did scan: ' + str(scannum) + '  time: ' + f'{timestamp}')
+                print('did scan: ' + str(scannum) + '  time: ' + f'{timestamp:.3f}' + '  position: ' + f'{position_xyz}' + '   layer: ' + f'{layer}' + '   last_z: ' + f'{last_z}')
                 
         except KeyboardInterrupt:
             print("       logging stopped")
