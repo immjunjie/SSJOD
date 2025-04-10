@@ -1,6 +1,15 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import RedirectResponse
 
+# -----------------------------------------------------------------------------
+# How to Run this?
+# -----------------------------------------------------------------------------
+# Commands:
+# pip install pipenv
+# pipenv install
+# pipenv run uvicorn backend.simulator.api:app --reload
+# -----------------------------------------------------------------------------
+
 # =============================================================================
 # Cluster API
 # =============================================================================
@@ -19,7 +28,7 @@ cluster_tags_metadata = [
     },
     {
         "name": "cloud",
-        "description": "Endpoint for part of the Cloud/OAuth2 authentication process",
+        "description": "Endpoint for part of the Cloud/OAuth2 authentication.py process",
     },
     {
         "name": "setting",
@@ -35,19 +44,18 @@ cluster_tags_metadata = [
     },
 ]
 
-# Cluster_Application
+# Cluster Application
 cluster_app = FastAPI(
     docs_url="/docs",
     redoc_url=None,
     title="Ultimaker - Connect API - Simulator",
     openapi_tags=cluster_tags_metadata
-
 )
 
-# Cluster_route
+# Cluster route definitions
 cluster_router = APIRouter()
 
-# ------------Debug------------
+# Debug endpoints
 @cluster_router.get("/debug/match_matrix/{nr}", tags=["debug"], summary="Shows a list of all the last job <-> printer matcher from the scheduler")
 def get_debug_match_matrix():
     """myDescription"""
@@ -58,8 +66,8 @@ def get_debug_schedule():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Print_jobs------------
-@cluster_router.get("/print_jobs", tags=["print_jobs"],summary="Return a list of all current print jobs in the queuue")
+# Print jobs endpoints
+@cluster_router.get("/print_jobs", tags=["print_jobs"], summary="Return a list of all current print jobs in the queuue")
 def get_print_jobs():
     """myDescription"""
     return {"jobs": ["Job1", "Job2"]}
@@ -79,15 +87,14 @@ def get_print_jobs_queued():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-
-# ------------Printers------------
+# Printers endpoints
 @cluster_router.get("/printers", tags=["printers"], summary="Return a list of all the connected printers")
 def get_a_list_of_all_the_connected_printers():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Cloud------------
-@cluster_router.get("/cloud/authentication", tags=["cloud"])
+# Cloud endpoints
+@cluster_router.get("/cloud/authentication.py", tags=["cloud"])
 def get_cloud_authentication():
     """myDescription"""
     return {"Message": "mySuccessful"}
@@ -102,13 +109,13 @@ def get_cloud_redirect():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Setting------------
+# Setting endpoints
 @cluster_router.get("/setting/{identifier}", tags=["setting"])
 def get_setting_identifier():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------System------------
+# System endpoints
 @cluster_router.get("/system/authentication_mode", tags=["system"])
 def get_system_authentication_mode():
     """myDescription"""
@@ -134,18 +141,14 @@ def get_system_lastest_firmware_versions():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Materials------------
+# Materials endpoints
 @cluster_router.get("/materials", tags=["materials"], summary="Return a list of all the materials")
 def get_materials():
     """Description"""
     return {"Message": "mySuccessful"}
 
-
-
-
-
 # =============================================================================
-# Swagger API
+# Swagger API (Main Application)
 # =============================================================================
 swagger_tags_metadata = [
     {
@@ -194,7 +197,7 @@ swagger_tags_metadata = [
     },
 ]
 
-# Main_Application - Swagger
+# Main Application - Swagger
 app = FastAPI(
     docs_url="/docs/api",
     redoc_url=None,
@@ -202,17 +205,16 @@ app = FastAPI(
     openapi_tags=swagger_tags_metadata
 )
 
-# Main-app-route
+# Main application route definitions
 main_router = APIRouter()
 
-# Root Path Redirection
-# ------------Default------------
+# Root path redirection
 @app.get("/", tags=["Default"])
 def redirect_to_docs():
     """Redirect to cluster API documentation"""
     return RedirectResponse(url="/cluster-api/v1/docs")
 
-# ------------Authentication------------
+# Authentication endpoints
 @main_router.get("/auth/check/{id}", tags=["Authentication"])
 def get_auth_check_by_id():
     """myDescription"""
@@ -223,7 +225,7 @@ def get_auth_verify():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Materials------------
+# Materials endpoints
 @main_router.get("/materials", tags=["Materials"])
 def get_materials():
     """myDescription"""
@@ -234,7 +236,7 @@ def get_materials_by_matirials_guid():
     """myDescription"""
     return {"Message": "mySuccessful"}
 
-# ------------Printer------------
+# Printer endpoints
 @main_router.get("/printer", tags=["Printer"])
 def get_printer():
     return {"Message": "mySuccessful"}
@@ -243,7 +245,7 @@ def get_printer():
 def get_printer_status():
     return {"Message": "mySuccessful"}
 
-# ------------Network------------
+# Network endpoints
 @main_router.get("/printer/network", tags=["Network"])
 def get_printer_network():
     return {"Message": "mySuccessful"}
@@ -252,7 +254,7 @@ def get_printer_network():
 def get_printer_network_wifi_networks():
     return {"Message": "mySuccessful"}
 
-# ------------PrintJob------------
+# PrintJob endpoints
 @main_router.get("/print_job", tags=["PrintJob"])
 def get_print_job():
     status = True
@@ -260,7 +262,7 @@ def get_print_job():
         return []
     return {"Message": "mySuccessful"}
 
-# ------------System------------
+# System endpoints
 @main_router.get("/system", tags=["System"])
 def get_system():
     return {"Message": "mySuccessful"}
@@ -269,12 +271,12 @@ def get_system():
 def get_system_platform():
     return {"Message": "mySuccessful"}
 
-# ------------History------------
+# History endpoints
 @main_router.get("/history/print_jobs", tags=["History"])
 def get_history_print_jobs():
     return {"Message": "mySuccessful"}
 
-# ------------Camera------------
+# Camera endpoints
 @main_router.get("/camera", tags=["Camera"])
 def get_camera():
     return {"Message": "mySuccessful"}
@@ -291,27 +293,24 @@ def get_camera_steam_by_index():
 def get_camera_snapshot_by_index():
     return {"Message": "mySuccessful"}
 
-# ------------AirManager------------
+# AirManager endpoints
 @main_router.get("/airmanager", tags=["AirManager"])
-def get_camera():
+def get_airmanager():
     return {"Message": "mySuccessful"}
 
-# ------------Ambient_temperature------------
+# Ambient temperature endpoints
 @main_router.get("/ambient_temperature", tags=["Ambient_temperature"])
-def get_camera():
+def get_ambient_temperature():
     return {"Message": "mySuccessful"}
 
-
-
-
 # =============================================================================
-
+# Application Assembly
 # =============================================================================
-# Load the route into the sub-app
+# Load the cluster routes into cluster app
 cluster_app.include_router(cluster_router)
 
-# Load sub-app into main app
+# Mount cluster app under /cluster-api/v1 path
 app.mount("/cluster-api/v1", cluster_app)
 
-#
+# Include main router in the main app
 app.include_router(main_router)
