@@ -17,7 +17,7 @@ endpoints = {
     "led":"/led",
     "status":"/status",
     "jerk":"/heads/0/extruders/0/feeder/jerk",
-    "acive_material":"/heads/0/extruders/0/active_material",
+    "active_material":"/heads/0/extruders/0/active_material",
     "length_remaining":"/heads/0/extruders/0/active_material/length_remaining",
     "max_speed":"/heads/0/extruders/0/feeder/max_speed"
 }
@@ -64,10 +64,7 @@ if __name__=="__main__":
         preprint_grp.create_group('Gcode')
 
         #   Example: adding metadata to preprint
-        preprint_grp.attrs['printer_model'] = 'IDK'
-        preprint_grp.attrs['material'] = 'Whatever'
-        preprint_grp.attrs['layer_height'] = 1  # mm
-        preprint_grp.attrs['resolution'] = 'Blue sk7'
+        preprint_grp.attrs['printer_model'] = 'Ultimaker S5'
 
         #   Screenshots group could hold images as datasets in future
         screenshots_grp.attrs['format'] = 'JPEG'
@@ -88,8 +85,6 @@ if __name__=="__main__":
                         name, data = future.result()
                         results[name] = data
 
-                # Check that each endpoint returned data
-                required = ["bed_temp", "head_pos", "nozzle_temp_current", "nozzle_temp_target", "time_spent_hot", "material_extruded"]
 
                 # Timestamp for this scan
                 timestamp = datetime.now().isoformat()
@@ -113,7 +108,8 @@ if __name__=="__main__":
                 current_z = float(position_xyz[2])
                 if current_z >= (last_z + 0.10) and current_z <= (last_z + 0.20) or last_z == 0:
                     layer += 1
-                    layer_grp = layers_grp.create_group(f'layer_{layer}_timestamp_{timestamp}')
+                    layer_grp = layers_grp.create_group(f'layer_{layer}')
+                    layer_grp.attrs['timestamp'] = timestamp
                     print('layer change')
                     last_z = current_z
 
@@ -126,19 +122,16 @@ if __name__=="__main__":
                 led_status = convert_to_float(results.get("led", 0))
                 printer_status = results.get("status", {})
                 jerk = convert_to_float(results.get("jerk", 0))
-                active_material = convert_to_float(results.get("acive_material", 0))
+                active_material = convert_to_float(results.get("active_material", 0))
                 length_remaining = convert_to_float(results.get("length_remaining", 0))
                 max_speed = convert_to_float(results.get("max_speed", 0))
 
                 #layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
-                scan_grp = layer_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
+                scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
 
                 # Create subgroup for printer head data
                 printer_head = scan_grp.create_group('printer_head')
                 printer_head.create_dataset("position", data=position_xyz)
-                printer_head.create_dataset("X_position", data=position_xyz[0])
-                printer_head.create_dataset("Y_position", data=position_xyz[1])
-                printer_head.create_dataset("Z_position", data=position_xyz[2])
 
                 # Extruder data
                 extruder_grp = printer_head.create_group('extruder')
