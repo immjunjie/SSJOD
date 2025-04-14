@@ -17,3 +17,14 @@ class PrinterSnapshotter:
         """
         self.url = url
         self.hdf5_file = hdf5_file
+
+    def fetch_snapshot(self):
+        try:
+            response = requests.get(self.url, timeout=10)
+            if response.status_code == 200:
+                return np.frombuffer(response.content, dtype='uint8')
+            else:
+                print(f"Failed to fetch image. Status code: {response.status_code}")
+        except requests.RequestException as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Network error fetching snapshot: {e}")
+        return None
