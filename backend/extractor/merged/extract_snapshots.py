@@ -19,6 +19,12 @@ class PrinterSnapshotter:
         self.hdf5_file = hdf5_file
 
     def fetch_snapshot(self):
+        """
+        Fetches a snapshot from the printer's camera via URL
+
+        RETURNS:
+            np.ndarray/None. Taking snapshot data as a NumPy array of uint8 or None if the request failed.
+        """
         try:
             response = requests.get(self.url, timeout=10)
             if response.status_code == 200:
