@@ -4,9 +4,12 @@ import time
 import numpy as np
 from datetime import datetime
 import concurrent.futures
+import os
 
 base_url='http://143.239.73.224/api/v1/printer'
-gcode_path = '/Users/op5/Desktop/Repo/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
+
+gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
+stl_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl'
 
 endpoints = {
     "bed_temp": "/bed/temperature",
@@ -18,19 +21,18 @@ endpoints = {
     "led":"/led",
     "status":"/status",
     "jerk":"/heads/0/extruders/0/feeder/jerk",
-    "active_material":"/heads/0/extruders/0/active_material",
+    "acive_material":"/heads/0/extruders/0/active_material",
     "length_remaining":"/heads/0/extruders/0/active_material/length_remaining",
     "max_speed":"/heads/0/extruders/0/feeder/max_speed"
 }
 
-def query(name, path):
+def query( name, path):
     try:
         response = requests.get(base_url + path, timeout=2)
         return name, response.json()
     except Exception as e:
         return name, {"error": str(e)}
     
-
 def convert_to_float(val):
     if isinstance(val, dict):
         for key in ["current", "value"]:
@@ -76,6 +78,15 @@ def extractLayerHeightgcode(gcode_path):
 
     return None
 
+def store_file_with_metadata(h5_group, file_path, dataset_name, description):
+    # Read binary content
+    with open(file_path, "rb") as f:
+        data = f.read()
+        # Store binary blob
+        dset = h5_group.create_dataset(dataset_name, data=np.void(data))
+
+    dset.attrs["filesize_bytes"] = len(data)
+    dset.attrs["description"] = description
 
 if __name__=="__main__":
     
@@ -92,21 +103,26 @@ if __name__=="__main__":
         screenshots_grp = f.create_group('Screenshots')
 
         #   Create subgroups in preprint
-        preprint_grp.create_group('STL')
-        Gcode = preprint_grp.create_group('Gcode')
-        
+        stl_grp = preprint_grp.create_group('STL')
+        Gcode_grp = preprint_grp.create_group('Gcode')
+
         #add full gCode as string
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
-            Gcode.create_dataset("full_text", data=gcode_str)
-    
+            Gcode_grp.create_dataset("full_text", data=gcode_str)
+
+        #   Example: adding metadata to preprint
+        stl_des = 'the stl file stored as binary'
+        gcode_des = 'the gcode file stored as binary'
+        store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", stl_des)
+        store_file_with_metadata(Gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", gcode_des)
+
         #   getting layerheight from gcode
         layer_height = extractLayerHeightgcode(gcode_path)
         preprint_grp.attrs['layer_height'] = layer_height if layer_height else "unknown"
         print(f"Layer height: {layer_height} mm")
-        
-        
-        preprint_grp.attrs['resolution'] = 'Ultimaker'
+
+        preprint_grp.attrs['resolution'] = 'Blue sk7'
 
         #   Screenshots group could hold images as datasets in future
         screenshots_grp.attrs['format'] = 'JPEG'
@@ -127,6 +143,8 @@ if __name__=="__main__":
                         name, data = future.result()
                         results[name] = data
 
+                # Check that each endpoint returned data
+                required = ["bed_temp", "head_pos", "nozzle_temp_current", "nozzle_temp_target", "time_spent_hot", "material_extruded"]
 
                 # Timestamp for this scan
                 timestamp = datetime.now().isoformat()
@@ -150,8 +168,7 @@ if __name__=="__main__":
                 current_z = float(position_xyz[2])
                 if current_z >= (last_z + (layer_height - 0.05)) and current_z <= (last_z + (layer_height + 0.05)) or last_z == 0:
                     layer += 1
-                    layer_grp = layers_grp.create_group(f'layer_{layer}')
-                    layer_grp.attrs['timestamp'] = timestamp
+                    layer_grp = layers_grp.create_group(f'layer_{layer}_timestamp_{timestamp}')
                     print('layer change')
                     last_z = current_z
 
@@ -164,16 +181,18 @@ if __name__=="__main__":
                 led_status = convert_to_float(results.get("led", 0))
                 printer_status = results.get("status", {})
                 jerk = convert_to_float(results.get("jerk", 0))
-                active_material = convert_to_float(results.get("active_material", 0))
+                active_material = convert_to_float(results.get("acive_material", 0))
                 length_remaining = convert_to_float(results.get("length_remaining", 0))
                 max_speed = convert_to_float(results.get("max_speed", 0))
 
-                #layer_grp = layers_grp.create_group(f'layer: {layer:04d}')
-                scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
+                scan_grp = layer_grp.create_group(f'scan_{scannum:06d}_timestamp_{timestamp}')
 
                 # Create subgroup for printer head data
                 printer_head = scan_grp.create_group('printer_head')
                 printer_head.create_dataset("position", data=position_xyz)
+                printer_head.create_dataset("X_position", data=position_xyz[0])
+                printer_head.create_dataset("Y_position", data=position_xyz[1])
+                printer_head.create_dataset("Z_position", data=position_xyz[2])
 
                 # Extruder data
                 extruder_grp = printer_head.create_group('extruder')
@@ -215,8 +234,3 @@ if __name__=="__main__":
                 
         except KeyboardInterrupt:
             print("       logging stopped")
-
-
-    
-
-
