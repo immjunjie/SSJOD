@@ -80,3 +80,11 @@ class PrinterSnapshotter:
                     print("Skipping save due to fetch error.")
 
                 time.sleep(np.random.uniform(*interval_range))
+
+
+if __name__ == "__main__":
+    url = "http://143.239.73.224:8080/?action=snapshot"
+    output_file = "printer_images.h5"
+
+    snapper = PrinterSnapshotter(url, output_file)
+    snapper.start_capturing()
