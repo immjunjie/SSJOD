@@ -6,7 +6,7 @@ from datetime import datetime
 import concurrent.futures
 
 base_url='http://143.239.73.224/api/v1/printer'
-gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
+gcode_path = '/Users/op5/Desktop/Repo/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
 
 endpoints = {
     "bed_temp": "/bed/temperature",
@@ -94,22 +94,19 @@ if __name__=="__main__":
         #   Create subgroups in preprint
         preprint_grp.create_group('STL')
         Gcode = preprint_grp.create_group('Gcode')
-
+        
         #add full gCode as string
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
             Gcode.create_dataset("full_text", data=gcode_str)
-
-        #   Example: adding metadata to preprint
-        preprint_grp.attrs['printer_model'] = 'IDK'
-        preprint_grp.attrs['material'] = 'Whatever'
-
+    
         #   getting layerheight from gcode
         layer_height = extractLayerHeightgcode(gcode_path)
         preprint_grp.attrs['layer_height'] = layer_height if layer_height else "unknown"
         print(f"Layer height: {layer_height} mm")
-
-        preprint_grp.attrs['resolution'] = 'Blue sk7'
+        
+        
+        preprint_grp.attrs['resolution'] = 'Ultimaker'
 
         #   Screenshots group could hold images as datasets in future
         screenshots_grp.attrs['format'] = 'JPEG'

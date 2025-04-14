@@ -1,0 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+    padding-top: 50px;
+}
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    display: inline-block;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: white;
+}
+.start {
+    background-color: #28a745;
+}
+.stop {
+    background-color: #dc3545;
+}
+.active {
+    color: green;
+}
+.inactive {
+    color: red;
+}
