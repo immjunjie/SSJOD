@@ -96,10 +96,9 @@ if __name__=="__main__":
         Gcode = preprint_grp.create_group('Gcode')
 
         #add full gCode as string
-        with h5py.File("print_data.h5", "a") as f:
-            with open(gcode_path, "r") as gcode_file:
-                gcode_str = gcode_file.read()
-                Gcode.create_dataset("full_text", data=gcode_str)
+        with open(gcode_path, "r") as gcode_file:
+            gcode_str = gcode_file.read()
+            Gcode.create_dataset("full_text", data=gcode_str)
 
         #   Example: adding metadata to preprint
         preprint_grp.attrs['printer_model'] = 'IDK'
