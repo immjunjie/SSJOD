@@ -6,6 +6,7 @@ from datetime import datetime
 import concurrent.futures
 
 base_url='http://143.239.73.224/api/v1/printer'
+gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
 
 endpoints = {
     "bed_temp": "/bed/temperature",
@@ -44,6 +45,38 @@ def convert_to_float(val):
     except:
         return 0.0
 
+def extractLayerHeightgcode(gcode_path):
+    layer_count = None
+    min_z = None
+    max_z = None
+
+    try:
+        with open(gcode_path, "r", encoding="utf-8", errors="ignore") as file:
+            for line in file:
+                if ";LAYER_COUNT:" in line:
+                    layer_count = int(line.strip().split(":")[1])
+                    print(f"Found layer count: {layer_count}")
+                elif ";PRINT.SIZE.MIN.Z:" in line:
+                    min_z = float(line.strip().split(":")[1])
+                    print(f"Found min Z: {min_z}")
+                elif ";PRINT.SIZE.MAX.Z:" in line:
+                    max_z = float(line.strip().split(":")[1])
+                    print(f"Found max Z: {max_z}")
+                if layer_count is not None and min_z is not None and max_z is not None:
+                    break
+
+        if layer_count and min_z is not None and max_z is not None:
+            layer_height = round((max_z - min_z) / (layer_count - 1), 4)
+            print(f"Calculated layer height: {layer_height}")
+            return layer_height
+        else:
+            print("Missing one or more required values in G-code.")
+    except Exception as e:
+        print(f"Failed to extract layer height: {e}")
+
+    return None
+
+
 if __name__=="__main__":
     
     layer = 0
@@ -52,7 +85,6 @@ if __name__=="__main__":
     lasttime = 0
 
     print("logging. press ctrl+c to stop")
-    
     with h5py.File("extract_info.hdf5", "w") as f:
         #   Create main groups
         preprint_grp = f.create_group('preprint')
@@ -61,12 +93,23 @@ if __name__=="__main__":
 
         #   Create subgroups in preprint
         preprint_grp.create_group('STL')
-        preprint_grp.create_group('Gcode')
+        Gcode = preprint_grp.create_group('Gcode')
+
+        #add full gCode as string
+        with h5py.File("print_data.h5", "a") as f:
+            with open(gcode_path, "r") as gcode_file:
+                gcode_str = gcode_file.read()
+                Gcode.create_dataset("full_text", data=gcode_str)
 
         #   Example: adding metadata to preprint
         preprint_grp.attrs['printer_model'] = 'IDK'
         preprint_grp.attrs['material'] = 'Whatever'
-        preprint_grp.attrs['layer_height'] = 1  # mm
+
+        #   getting layerheight from gcode
+        layer_height = extractLayerHeightgcode(gcode_path)
+        preprint_grp.attrs['layer_height'] = layer_height if layer_height else "unknown"
+        print(f"Layer height: {layer_height} mm")
+
         preprint_grp.attrs['resolution'] = 'Blue sk7'
 
         #   Screenshots group could hold images as datasets in future
@@ -111,7 +154,7 @@ if __name__=="__main__":
                 except Exception as e:
                     position_xyz = np.array([0.0, 0.0, 0.0])
                 current_z = float(position_xyz[2])
-                if current_z >= (last_z + 0.10) and current_z <= (last_z + 0.20) or last_z == 0:
+                if current_z >= (last_z + (layer_height - 0.05)) and current_z <= (last_z + (layer_height + 0.05)) or last_z == 0:
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer}_timestamp_{timestamp}')
                     print('layer change')
