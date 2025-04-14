@@ -1,4 +1,5 @@
 # extract_snapshots.py
+import os
 
 import requests
 import h5py
@@ -23,7 +24,8 @@ class PrinterSnapshotter:
         Fetches a snapshot from the printer's camera via URL
 
         RETURNS:
-            np.ndarray/None. Taking snapshot data as a NumPy array of uint8 or None if the request failed.
+            np.ndarray/None. Taking snapshot data as a NumPy array of uint8 or
+            None if the request failed.
         """
         try:
             response = requests.get(self.url, timeout=10)
@@ -34,3 +36,47 @@ class PrinterSnapshotter:
         except requests.RequestException as e:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Network error fetching snapshot: {e}")
         return None
+
+    def start_capturing(self, interval_range=(3,5), max_images=5, save_folder="printer_images"):
+        """
+        ///TEST version of the function with interval range to take snapshots when the printer in idle state
+        /// and implemented method to store these snapshots in both ways (HDF5 and local in the same folder
+        /// by creating a new folder printer_images
+
+        Captures snapshots until max_images is reached.
+
+        ARGS:
+            to be continued...
+        """
+        os.makedirs(save_folder, exists_ok=True)
+
+        with h5py.File(self.hdf5_file, 'a') as hdf:
+            if 'images' not in hdf:
+                dt = h5py.special_dtype(vlen=np.dtype('uint8'))  # variable-length byte array
+                hdf.create_dataset('images', shape=(0,), maxshape=(None,), dtype=dt)
+                hdf.create_dataset('timestamps', shape=(0,), maxshape=(None,), dtype=h5py.string_dtype())
+
+            count = hdf['images'].shape[0]
+
+            while count < max_images:
+                snapshot = self.fetch_snapshot()
+                if snapshot is not None:
+                    hdf['images'].resize((count + 1,))
+                    hdf['images'][count] = snapshot
+
+                    hdf['timestamps'].resize((count + 1,))
+                    hdf['timestamps'][count] = datetime.now().isoformat()
+
+                    # Save as .jpg for testing store snapshots
+                    image_path = os.path.join(save_folder, f"snapshot_{count + 1}.jpg")
+                    with open(image_path, 'wb') as f:
+                        f.write(snapshot.tobytes())
+
+                    hdf.flush() # If the program crashes - the data is saved up to the last successful snap.
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] Saved image #{count + 1}")
+                    count += 1
+
+                else:
+                    print("Skipping save due to fetch error.")
+
+                time.sleep(np.random.uniform(*interval_range))
