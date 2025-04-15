@@ -198,8 +198,6 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
                 sleep_time = max(0, interval_time - elapsed)
                 time.sleep(sleep_time)
 
-
-                print('. ')
                 print(f'did scan: {scannum},  time: {sleep_time + elapsed:.3f} sec')
                 
 
