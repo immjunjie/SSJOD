@@ -4,25 +4,14 @@ import time
 import numpy as np
 from datetime import datetime
 import concurrent.futures
+from filter_endpoints import filterMask
+
 
 # Global control variable
 running = False
 
 # Organized endpoints: priority order (position, temperature, status, others)
-endpoints = {
-    "head_pos": "/heads/0/position",
-    "bed_temp": "/bed/temperature",
-    "nozzle_temp_current": "/heads/0/extruders/0/hotend/temp/current",
-    "nozzle_temp_target": "/heads/0/extruders/0/hotend/temp/target",
-    "time_spent_hot": "/heads/0/extruders/0/hotend/statistics/time_spent_hot",
-    "status": "/status",
-    "material_extruded": "/heads/0/extruders/0/hotend/statistics/material_extruded",
-    "led": "/led",
-    "jerk": "/heads/0/extruders/0/feeder/jerk",
-    "active_material": "/heads/0/extruders/0/active_material",
-    "length_remaining": "/heads/0/extruders/0/active_material/length_remaining",
-    "max_speed": "/heads/0/extruders/0/feeder/max_speed"
-}
+
 
 
 def query(base_url, name, path):
@@ -85,8 +74,9 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
+def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, endpoints, sequence):
     """Main logger: fetches printer data, stores it in structured HDF5 file."""
+
     global running
     if running:
         print("Logger is already running.")
@@ -161,34 +151,39 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
                 
-                # === STORE MOST IMPORTANT FIRST ===
-                scan_grp.create_dataset("position", data=position_xyz)
+                # === STORAGE ===
+                if sequence[0] == '1':
+                    scan_grp.create_dataset("position", data=position_xyz) # 1
+                if sequence[1] == '1':
+                    bed_info = results["bed_temp"] # 2
+                    scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
+                    scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
+                    scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
+                if sequence[2] == '1':
+                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"])) # 3
+                if sequence[3] == '1':
+                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"])) # 4
+                if sequence[4] == '1':
+                    scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0))) # 5
+                if sequence[5] == '1':
+                    scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt) # 6
+                if sequence[6] == '1':
+                    scan_grp.create_dataset("material_extruded", data=convert_to_float(results.get("material_extruded", 0))) # 7
+                if sequence[7] == '1':
+                    scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0))) # 8
+                if sequence[8] == '1':
+                    scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0))) # 9
+                if sequence[9] == '1':
+                    scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0))) # 10
+                if sequence[10] == '1':
+                    scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0))) # 11
+                if sequence[11] == '1':
+                    scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0))) # 12
+
+                # === Metadata ===
                 scan_grp.attrs['position_Z'] = current_z
-
-                scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"]))
-                scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"]))
-
-                bed_info = results["bed_temp"]
-                scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
-                scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
-                scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
-
-                # === PRINTER STATE ===
-                scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt)
-                scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0)))
-
-                # === MATERIAL TRACKING ===
-                scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0)))
-                scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0)))
-                scan_grp.create_dataset("material_extruded", data=convert_to_float(results.get("material_extruded", 0)))
-
-                # === PERFORMANCE METRICS ===
-                scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0)))
-                scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0)))
-                scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0)))
-
-                # === TIMESTAMP ===
                 scan_grp.attrs['timestamp'] = timestamp
+
                 # Handle timing and wait interval
                 elapsed = time.perf_counter() - start_time
                 sleep_time = max(0, interval_time - elapsed)
@@ -206,5 +201,6 @@ if __name__ == "__main__":
         base_url='http://143.239.73.224/api/v1/printer',
         stl_path='backend/UI/_3DBenchy.stl',
         gcode_path='backend/UI/UMS5__3DBenchy.gcode',
-        interval_time=0.01
+        interval_time=0.01,
+        bit_sequence = filterMask("111111111111")
     )
