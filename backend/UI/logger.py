@@ -90,11 +90,13 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, stl_path, gcode_path):
+def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
+    """takes in the users hdf5 filename, base_url, stl_path, gcode_path and the desired interval time between scans"""
     global running
     if running:
         print("Logger is already running.")
         return
+
     running = True
     layer = 0
     scannum = 0
@@ -130,13 +132,18 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path):
 
         layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
 
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
+
         try:
             running = True
             while running:
+
                 scannum += 1
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
-                    results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
+                start_time = time.perf_counter()
+                elapsed = 0
+                
+                futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
+                results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
 
                 timestamp = datetime.now().isoformat()
                 bed_info = results["bed_temp"]
@@ -178,7 +185,6 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path):
                 session_grp.create_dataset("time_spent_hot", data=convert_to_float(results["time_spent_hot"]))
 
                 scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0)))
-                scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt)
                 scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0)))
                 scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0)))
                 scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0)))
@@ -187,16 +193,19 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path):
                 scan_grp.attrs['position_Z'] = current_z
                 scan_grp.attrs['timestamp'] = timestamp
 
-                now = time.perf_counter()
-                elapsed = now - lasttime
-                lasttime = now
+                end_time = time.perf_counter()
+                elapsed = end_time - start_time
+                sleep_time = max(0, interval_time - elapsed)
+                time.sleep(sleep_time)
 
-                print(f'did scan: {scannum}  time: {elapsed:.3f} sec  position: {position_xyz}   layer: {layer}   last_z: {last_z}')
-                # time.sleep(1)
+
+                print('. ')
+                print(f'did scan: {scannum},  time: {sleep_time + elapsed:.3f} sec')
+                
 
         except KeyboardInterrupt:
             print("Logging stopped.")
 
 
 if __name__ == "__main__":
-    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode')
+    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode', 0.01)
