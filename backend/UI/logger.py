@@ -159,28 +159,36 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
                     print('Layer changed:', layer)
 
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
-
-                # Store primary data first
+                dt = h5py.string_dtype(encoding='utf-8')
+                
+                # === STORE MOST IMPORTANT FIRST ===
                 scan_grp.create_dataset("position", data=position_xyz)
+                scan_grp.attrs['position_Z'] = current_z
+
                 scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"]))
                 scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"]))
-                scan_grp.create_dataset("bed_temp_current", data=convert_to_float(results["bed_temp"].get("current", 0)))
-                scan_grp.create_dataset("bed_temp_target", data=convert_to_float(results["bed_temp"].get("target", 0)))
 
-                # Secondary data
-                scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=h5py.string_dtype())
-                scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results["time_spent_hot"]))
-                scan_grp.create_dataset("material_extruded", data=convert_to_float(results["material_extruded"]))
+                bed_info = results["bed_temp"]
+                scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
+                scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
+                scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
+
+                # === PRINTER STATE ===
+                scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt)
                 scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0)))
-                scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0)))
+
+                # === MATERIAL TRACKING ===
                 scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0)))
                 scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0)))
+                scan_grp.create_dataset("material_extruded", data=convert_to_float(results.get("material_extruded", 0)))
+
+                # === PERFORMANCE METRICS ===
+                scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0)))
+                scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0)))
                 scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0)))
 
-                # Metadata
-                scan_grp.attrs['position_Z'] = current_z
+                # === TIMESTAMP ===
                 scan_grp.attrs['timestamp'] = timestamp
-
                 # Handle timing and wait interval
                 elapsed = time.perf_counter() - start_time
                 sleep_time = max(0, interval_time - elapsed)
