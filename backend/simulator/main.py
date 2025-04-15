@@ -6,34 +6,47 @@ from .routers.swagger import air_manager,ambient_temperature,authentication,came
 # ========================================================
 # How to Run this?
 # --------------------------------------------------------
+'''UltiMaker Printer - Official Cura API URLs of WGB'''
+# http://143.239.73.224/docs/api/
+# http://143.239.73.224/cluster-api/v1/
+# --------------------------------------------------------
 '''method1 - docker'''
 # 1. download docker and install it into the documents/applications directory
 # 2. run the docker application at the background
 # 3. docker build -t simulator .
 # 4. docker run -p 8000:8000 simulator uvicorn backend.simulator.main:app --host 0.0.0.0 --port 8000
 # 5. visit 'http://localhost:8000/docs/api'
+# 6. visit 'http://localhost:8000/cluster-api/v1/'
 # --------------------------------------------------------
-# Optional:
+# Optional (with the local machine ip addresses)
 # 4. ifconfig | grep "inet " | grep -v 127.0.0.1
 # 5. docker run -p <ip address>:8000:8000 simulator
 #    docker run -p 10.241.186.77:8000:8000 simulator
 # 6. visit 'http://10.241.186.77:8000/docs/api'
+# 7. visit 'http://10.241.186.77:8000/cluster-api/v1/'
 # --------------------------------------------------------
 '''method2 - pipenv'''
-# pip install pipenv
+# 1. pip install pipenv
 # or "pip3 install pipenv"
-# python3 -m site --user-base
-# which pipenv
-# export PATH="$HOME/Library/Python/3.11/bin:$PATH"
-# pipenv --version
-# pipenv install
-# pipenv run uvicorn backend.simulator.main:app --reload
+# 2. python3 -m site --user-base
+# 3. which pipenv
+# 4. export PATH="$HOME/Library/Python/3.11/bin:$PATH"
+# 5. pipenv --version
+# 6. pipenv install
+# 7. pipenv run uvicorn backend.simulator.main:app --reload
 # --------------------------------------------------------
+# Optional (config the shell with path export)
 # echo 'export PATH="$HOME/Library/Python/3.11/bin:$PATH"' >> ~/.zshrc
 # source ~/.zshrc
 # --------------------------------------------------------
+# If needed:
 # export LANG=en_US.UTF-8
 # --------------------------------------------------------
+
+
+
+
+
 
 # ===================== Cluster API =====================
 cluster_tags_metadata = [
@@ -47,10 +60,11 @@ cluster_tags_metadata = [
 ]
 
 cluster_app = FastAPI(
-    docs_url="/docs",
-    redoc_url=None,
+    docs_url="/",
+    redoc_url="/redocs",
     title="Ultimaker - Connect API - Simulator",
-    openapi_tags=cluster_tags_metadata
+    openapi_tags=cluster_tags_metadata,
+    description="""This API exposes endpoints to interact with the Ultimaker Digital Factory software""",
 )
 
 # route register
@@ -79,10 +93,22 @@ swagger_tags_metadata = [
 
 swagger_app = FastAPI(
     docs_url="/api",
-    redoc_url=None,
+    redoc_url="/api/redoc",
     title="Ultimaker API - Swagger - Simulator",
-    openapi_tags=swagger_tags_metadata
+    openapi_tags=swagger_tags_metadata,
+    description="""REST API for the Ultimaker 3D printer.
+
+Authentication: Any PUT/POST/DELETE api requires authentication before it can be used. Authentication is done with http digest (RFC 2617) without fallback to basic authentication.
+
+To get a valid username/password combination, the following process can/should be followed.
+
+1) POST /auth/request with 'application' and 'user' as parameters. The application name and user name will be shown to the user on the printer. The reply body will contain a json reply with an 'id' and 'key' part.
+
+2) Repeatedly GET /auth/check/ until it reports 'authorized' or 'unauthorized'. This will be reported back once the end user selects if the application is allowed to use the API.
+
+3) [optional] test the authentication, the earlier given 'id' is the username, the 'key' is the password. Use digest authentication on GET /auth/verify to test this."""
 )
+
 # route register
 swagger_app.include_router(air_manager.router)
 swagger_app.include_router(ambient_temperature.router)
