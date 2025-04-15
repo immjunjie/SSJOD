@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 import concurrent.futures
 import os
+from bs4 import BeautifulSoup
 
 base_url='http://143.239.73.224/api/v1/printer'
 
@@ -12,12 +13,13 @@ base_url='http://143.239.73.224/api/v1/printer'
 '''
 gcode_path = '/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
 stl_path = '/backend/extractor/merged/_3DBenchy.stl'          #change to your files path
+html_path = 'backend/extractor/merged/UMS5__3DBenchy.html'    #change to your files path
 '''
 
 #  relative path for Pycharm
 gcode_path = 'UMS5__3DBenchy.gcode'
 stl_path = '_3DBenchy.stl'
-
+html_path = 'UMS5_3DBenchy.html'
 
 endpoints = {
     "bed_temp": "/bed/temperature",
@@ -113,11 +115,19 @@ if __name__=="__main__":
         #   Create subgroups in preprint
         stl_grp = preprint_grp.create_group('STL')
         Gcode_grp = preprint_grp.create_group('Gcode')
+        Parameters_grp = preprint_grp.create_group('Parameters')
 
         #add full gCode as string
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
             Gcode_grp.create_dataset("full_text", data=gcode_str)
+
+        #add html as text    
+        with open(html_path, "r", encoding="utf-8") as html_code:
+            html_content = html_code.read()
+            html_soup = BeautifulSoup(html_content, "html.parser")
+            html_text = html_soup.get_text()
+            Parameters_grp.create_dataset("full_html",data=html_text)
 
         #   Example: adding metadata to preprint
         stl_des = 'the stl file stored as binary'
