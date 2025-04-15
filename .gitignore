@@ -6,3 +6,4 @@
 /print_details.hdf5
 /jumpOnLayerChange.hdf5
 venv
+/backend/UI/__pycache__

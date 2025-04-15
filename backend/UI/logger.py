@@ -141,7 +141,7 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
 
                 # Query all endpoints in parallel
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(query, name, path) for name, path in endpoints.items()]
+                    futures = [executor.submit(query,base_url, name, path) for name, path in endpoints.items()]
                     results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
 
                 timestamp = datetime.now().isoformat()
@@ -205,4 +205,4 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
 
 
 if __name__ == "__main__":
-    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode', 0.01)
+    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', 'backend/UI/_3DBenchy.stl', 'backend/UI/UMS5__3DBenchy.gcode', 0.01)
