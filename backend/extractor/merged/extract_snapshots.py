@@ -45,7 +45,7 @@ class PrinterSnapshotter:
                 hdf.create_dataset('images', shape=(0,), maxshape=(None,), dtype=dt)
                 hdf.create_dataset('timestamps', shape=(0,), maxshape=(None,), dtype=h5py.string_dtype())
 
-    def start_capturing(self, interval_range=(3,5), max_images=5, save_folder="printer_images"):
+    def start_capturing(self, save_folder="printer_images"):
         """
         ///TEST version of the function with interval range to take snapshots when the printer in idle state
         /// and implemented method to store these snapshots in both ways (HDF5 and local in the same folder
@@ -54,36 +54,50 @@ class PrinterSnapshotter:
         Captures snapshots until max_images is reached.
 
         ARGS:
-            to be continued...
+            save_folder(str): Directory to save local .jpg snapshot fot easier check.
         """
         os.makedirs(save_folder)
         self.hdf_structure_init()
 
         with h5py.File(self.hdf5_file, 'a') as hdf:
             count = hdf['images'].shape[0]
+            last_recorded_layer = -1
 
-            while count < max_images:
-                snapshot = self.fetch_snapshot()
-                if snapshot is not None:
-                    hdf['images'].resize((count + 1,))
-                    hdf['images'][count] = snapshot
+            while True:
+                current_layer = log_printer_data()
+                if not isinstance(current_layer, int):
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] No layer info retrieved. Retrying...")
+                    time.sleep(1)
+                    continue
+                if current_layer != last_recorded_layer:
+                    snapshot = self.fetch_snapshot()
+                    if snapshot is not None:
+                        hdf['images'].resize((count + 1,))
+                        hdf['images'][count] = snapshot
 
-                    hdf['timestamps'].resize((count + 1,))
-                    hdf['timestamps'][count] = datetime.now().isoformat()
+                        hdf['timestamps'].resize((count + 1,))
+                        hdf['timestamps'][count] = datetime.now().isoformat()
 
-                    # Save as .jpg for testing store snapshots
-                    image_path = os.path.join(save_folder, f"snapshot_{count + 1}.jpg")
-                    with open(image_path, 'wb') as f:
-                        f.write(snapshot.tobytes())
+                        # Save as .jpg for testing store snapshots
+                        image_path = os.path.join(save_folder, f"snapshot_{count + 1}.jpg")
+                        with open(image_path, 'wb') as f:
+                            f.write(snapshot.tobytes())
 
-                    hdf.flush() # If the program crashes - the data is saved up to the last successful snap.
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] Saved image #{count + 1}")
-                    count += 1
+                        # If the program crashes - the data is saved up to the last successful snap.
+                        try:
+                            hdf.flush()
+                        except Exception as e:
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Failed to flush HDF5 data: {e}")
 
-                else:
-                    print("Skipping save due to fetch error.")
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] Saved image #{count + 1}")
 
-                time.sleep(np.random.uniform(*interval_range))
+                        last_recorded_layer = current_layer
+                        count += 1
+
+                    else:
+                        print("Snapshot fetch failed, skipping this layer.")
+
+                time.sleep(1)
 
 
 if __name__ == "__main__":
