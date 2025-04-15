@@ -166,6 +166,8 @@ if __name__=="__main__":
                 except Exception as e:
                     position_xyz = np.array([0.0, 0.0, 0.0])
                 current_z = float(position_xyz[2])
+
+                # layer change check
                 if current_z >= (last_z + (layer_height - 0.05)) and current_z <= (last_z + (layer_height + 0.05)) or last_z == 0:
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer}_timestamp_{timestamp}')
