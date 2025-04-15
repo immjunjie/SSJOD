@@ -7,8 +7,18 @@ from .routers.swagger import air_manager,ambient_temperature,authentication,came
 # How to Run this?
 # --------------------------------------------------------
 # pip install pipenv
+# or "pip3 install pipenv"
+# python3 -m site --user-base
+# which pipenv
+# export PATH="$HOME/Library/Python/3.11/bin:$PATH"
+# pipenv --version
 # pipenv install
 # pipenv run uvicorn backend.simulator.main:app --reload
+# --------------------------------------------------------
+# echo 'export PATH="$HOME/Library/Python/3.11/bin:$PATH"' >> ~/.zshrc
+# source ~/.zshrc
+# --------------------------------------------------------
+# export LANG=en_US.UTF-8
 # --------------------------------------------------------
 
 # ===================== Cluster API =====================
