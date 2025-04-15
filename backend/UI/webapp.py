@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for
 import threading
-import logger  # This will be your modified logger script
+import logger
 
 app = Flask(__name__)
 log_thread = None
@@ -9,7 +9,7 @@ is_logging = False
 def start_logging():
     global is_logging
     is_logging = True
-    logger.run_logger()  # This function should contain your while loop logic
+    logger.run_logger()
 
 @app.route("/")
 def index():
