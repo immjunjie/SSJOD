@@ -8,23 +8,16 @@ import os
 
 base_url='http://143.239.73.224/api/v1/printer'
 
-<<<<<<< HEAD
-# absolute path (initial code) -VSCode
-'''
-gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
-stl_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl'          #change to your files path
-'''
-# relative path (universal) -Pycharm
-=======
 #  relative path for VSCode
 '''
 gcode_path = '/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
 stl_path = '/backend/extractor/merged/_3DBenchy.stl'          #change to your files path
 '''
+
 #  relative path for Pycharm
->>>>>>> a102569e8f132b9d5c270ac22aa5c11e570fe526
 gcode_path = 'UMS5__3DBenchy.gcode'
 stl_path = '_3DBenchy.stl'
+
 
 endpoints = {
     "bed_temp": "/bed/temperature",
