@@ -7,3 +7,6 @@
 /jumpOnLayerChange.hdf5
 venv
 /backend/UI/__pycache__
+backend/UI/__pycache__
+backend/UI/__pycache__/logger.cpython-311.pyc
+logger.cpython-311.pyc
