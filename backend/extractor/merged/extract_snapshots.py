@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import time
 from datetime import datetime
+from pullFromPrint import log_printer_data
 
 class PrinterSnapshotter:
     """A class for fetching snapshots from a 3D printer camera and saving them in HDF5 file."""
@@ -37,6 +38,13 @@ class PrinterSnapshotter:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Network error fetching snapshot: {e}")
         return None
 
+    def hdf_structure_init(self):
+        with h5py.File(self.hdf5_file, 'a') as hdf:
+            if 'images' not in hdf:
+                dt = h5py.special_dtype(vlen=np.dtype('uint8'))
+                hdf.create_dataset('images', shape=(0,), maxshape=(None,), dtype=dt)
+                hdf.create_dataset('timestamps', shape=(0,), maxshape=(None,), dtype=h5py.string_dtype())
+
     def start_capturing(self, interval_range=(3,5), max_images=5, save_folder="printer_images"):
         """
         ///TEST version of the function with interval range to take snapshots when the printer in idle state
@@ -48,14 +56,10 @@ class PrinterSnapshotter:
         ARGS:
             to be continued...
         """
-        os.makedirs(save_folder, exists_ok=True)
+        os.makedirs(save_folder)
+        self.hdf_structure_init()
 
         with h5py.File(self.hdf5_file, 'a') as hdf:
-            if 'images' not in hdf:
-                dt = h5py.special_dtype(vlen=np.dtype('uint8'))  # variable-length byte array
-                hdf.create_dataset('images', shape=(0,), maxshape=(None,), dtype=dt)
-                hdf.create_dataset('timestamps', shape=(0,), maxshape=(None,), dtype=h5py.string_dtype())
-
             count = hdf['images'].shape[0]
 
             while count < max_images:
