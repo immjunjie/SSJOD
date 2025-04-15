@@ -7,11 +7,6 @@ import concurrent.futures
 
 running = False
 
-base_url = 'http://143.239.73.224/api/v1/printer'
-
-gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
-stl_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl'
-
 endpoints = {
     "bed_temp": "/bed/temperature",
     "head_pos": "/heads/0/position",
@@ -28,7 +23,7 @@ endpoints = {
 }
 
 
-def query(name, path):
+def query(base_url, name, path):
     try:
         response = requests.get(base_url + path, timeout=2)
         return name, response.json()
@@ -95,7 +90,7 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename="print_details.hdf5"):
+def run_logger(hdf5_filename, base_url, stl_path, gcode_path):
     global running
     if running:
         print("Logger is already running.")
@@ -140,7 +135,7 @@ def run_logger(hdf5_filename="print_details.hdf5"):
             while running:
                 scannum += 1
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(query, name, path) for name, path in endpoints.items()]
+                    futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
                     results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
 
                 timestamp = datetime.now().isoformat()
@@ -204,4 +199,4 @@ def run_logger(hdf5_filename="print_details.hdf5"):
 
 
 if __name__ == "__main__":
-    run_logger()
+    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode')

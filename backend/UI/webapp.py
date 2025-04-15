@@ -9,7 +9,7 @@ is_logging = False
 def start_logging():
     global is_logging
     is_logging = True
-    logger.run_logger()  # This function should contain your while loop logic
+    logger.run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode')  # This function should contain your while loop logic
 
 @app.route("/")
 def index():
