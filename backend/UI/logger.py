@@ -7,10 +7,6 @@ import concurrent.futures
 
 running = False
 
-base_url = 'http://143.239.73.224/api/v1/printer'
-gcode_path = '/Users/op5/Desktop/Repo/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode'
-
-# Sorted by priority: Position, Temps, Status, Material, Metrics
 endpoints = {
     "head_pos": "/heads/0/position",
     "nozzle_temp_current": "/heads/0/extruders/0/hotend/temp/current",
@@ -27,7 +23,7 @@ endpoints = {
 }
 
 
-def query(name, path):
+def query(base_url, name, path):
     try:
         response = requests.get(base_url + path, timeout=2)
         return name, response.json()
@@ -60,26 +56,42 @@ def extractLayerHeightgcode(gcode_path):
             for line in file:
                 if ";LAYER_COUNT:" in line:
                     layer_count = int(line.strip().split(":")[1])
+                    print(f"Found layer count: {layer_count}")
                 elif ";PRINT.SIZE.MIN.Z:" in line:
                     min_z = float(line.strip().split(":")[1])
+                    print(f"Found min Z: {min_z}")
                 elif ";PRINT.SIZE.MAX.Z:" in line:
                     max_z = float(line.strip().split(":")[1])
-                if layer_count and min_z is not None and max_z is not None:
+                    print(f"Found max Z: {max_z}")
+                if layer_count is not None and min_z is not None and max_z is not None:
                     break
 
         if layer_count and min_z is not None and max_z is not None:
-            return round((max_z - min_z) / (layer_count - 1), 4)
+            layer_height = round((max_z - min_z) / (layer_count - 1), 4)
+            print(f"Calculated layer height: {layer_height}")
+            return layer_height
+        else:
+            print("Missing one or more required values in G-code.")
     except Exception as e:
         print(f"Failed to extract layer height: {e}")
+
     return None
 
+def store_file_with_metadata(h5_group, file_path, dataset_name, description):
+    with open(file_path, "rb") as f:
+        data = f.read()
+        dset = h5_group.create_dataset(dataset_name, data=np.void(data))
+
+    dset.attrs["filesize_bytes"] = len(data)
+    dset.attrs["description"] = description
 
 def stop_logger():
     global running
     running = False
 
 
-def run_logger(hdf5_filename="extract_info.hdf5"):
+def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time):
+    """takes in the users hdf5 filename, base_url, stl_path, gcode_path and the desired interval time between scans"""
     global running
     if running:
         print("Logger is already running.")
@@ -103,22 +115,28 @@ def run_logger(hdf5_filename="extract_info.hdf5"):
         layers_grp = f.create_group('layers')
         screenshots_grp = f.create_group('Screenshots')
 
-        preprint_grp.create_group('STL')
+        stl_grp = preprint_grp.create_group('STL')
         gcode_grp = preprint_grp.create_group('Gcode')
 
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
             gcode_grp.create_dataset("full_text", data=gcode_str)
 
-        preprint_grp.attrs['layer_height'] = layer_height
-        preprint_grp.attrs['resolution'] = 'Ultimaker'
+        stl_des = 'the stl file stored as binary'
+        gcode_des = 'the gcode file stored as binary'
+        store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", stl_des)
+        store_file_with_metadata(gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", gcode_des)
+
         screenshots_grp.attrs['format'] = 'JPEG'
         screenshots_grp.attrs['count'] = 0
 
         layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
 
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
+
         try:
             while running:
+
                 scannum += 1
 
                 # Query all endpoints in parallel
@@ -187,4 +205,4 @@ def run_logger(hdf5_filename="extract_info.hdf5"):
 
 
 if __name__ == "__main__":
-    run_logger()
+    run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl', '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode', 0.01)
