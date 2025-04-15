@@ -11,9 +11,9 @@ base_url='http://143.239.73.224/api/v1/printer'
 
 #  relative path for VSCode
 '''
-gcode_path = '/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
-stl_path = '/backend/extractor/merged/_3DBenchy.stl'          #change to your files path
-html_path = 'backend/extractor/merged/UMS5__3DBenchy.html'    #change to your files path
+gcode_path = 'backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
+stl_path = 'backend/extractor/merged/_3DBenchy.stl'          #change to your files path
+html_path = 'backend/extractor/merged/UMS5__3DBenchy.html'   #change to your files path
 '''
 
 #  relative path for Pycharm
@@ -56,6 +56,18 @@ def convert_to_float(val):
         return float(val)
     except:
         return 0.0
+
+def store_probe_report_from_api(h5_group, base_url):
+    url = f"{base_url}/diagnostics/probing_report"
+    try:
+        response = requests.get(url, timeout=3)
+        response.raise_for_status()
+        data_str = response.text  # raw JSON as string
+        dset = h5_group.create_dataset("bed_probe_data", data=data_str)
+        dset.attrs["description"] = "Initial bed leveling mesh from capacitive probe"
+        print("Stored probe report.")
+    except Exception as e:
+        print(f"Failed to fetch/store probe report: {e}")
 
 def extractLayerHeightgcode(gcode_path):
     layer_count = None
@@ -128,6 +140,11 @@ if __name__=="__main__":
             html_soup = BeautifulSoup(html_content, "html.parser")
             html_text = html_soup.get_text()
             Parameters_grp.create_dataset("full_html",data=html_text)
+
+        #add probe data as text
+        probe_des = 'Bed probing data from capacitive sensor used for mesh leveling'
+        probe_path = base_url + '/diagnostics/probing_report'
+        store_probe_report_from_api(preprint_grp, base_url)
 
         #   Example: adding metadata to preprint
         stl_des = 'the stl file stored as binary'
