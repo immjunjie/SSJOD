@@ -9,6 +9,7 @@ pydantic = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 requests = "*"
 h5py = "*"
+numpy = "*"
 
 [dev-packages]
 

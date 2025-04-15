@@ -8,8 +8,14 @@ import os
 
 base_url='http://143.239.73.224/api/v1/printer'
 
-gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
+# absolute path (initial code)
+'''
+gcode_path = '/Users/sb36/CS3300-Project/backend/extractor/mergedsers/sb36/CS3300-Project/backend/extractor/merged/UMS5__3DBenchy.gcode' #change to your files path
 stl_path = '/Users/sb36/CS3300-Project/backend/extractor/merged/_3DBenchy.stl'          #change to your files path
+'''
+# relative path (universal)
+gcode_path = 'UMS5__3DBenchy.gcode'
+stl_path = '_3DBenchy.stl'
 
 endpoints = {
     "bed_temp": "/bed/temperature",
