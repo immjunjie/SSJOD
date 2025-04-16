@@ -8,12 +8,23 @@
 <body>
     <div class="container">
         <h1>3D Printer Logger</h1>
+
         {% if logging %}
             <p>Status: <span class="active">Logging Active</span></p>
             <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
             <p>Status: <span class="inactive">Logging Stopped</span></p>
-            <a href="{{ url_for('start') }}" class="button start">Start Logging</a>
+            <form action="{{ url_for('start') }}" method="post">
+                <h3>Select endpoints to monitor:</h3>
+                {% for endpoint in listOfEndpoints %}
+                    <div style="text-align:left;">
+                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
+                            {% if sequence[loop.index0] == '1' %}checked{% endif %}>
+                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
+                    </div>
+                {% endfor %}
+                <button type="submit" class="button start">Start Logging</button>
+            </form>
         {% endif %}
     </div>
 </body>

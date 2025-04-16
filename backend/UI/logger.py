@@ -128,7 +128,10 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, end
 
                 # Query all endpoints in parallel
                 futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
-                results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
+                results = {}
+                for future in concurrent.futures.as_completed(futures):
+                    name, result = future.result()
+                    results[name] = result
 
                 timestamp = datetime.now().isoformat()
 
