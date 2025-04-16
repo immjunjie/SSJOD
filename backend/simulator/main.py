@@ -3,6 +3,11 @@ from fastapi.responses import RedirectResponse
 from .apis.cluster_api import ClusterAPI
 from .apis.swagger_api import SwaggerAPI
 import logging
+import sys
+from pathlib import Path
+
+# 将项目根目录添加到 Python 路径
+sys.path.append(str(Path(__file__).parent))
 
 # ========================================================
 # How to Run this?
