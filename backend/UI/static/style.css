@@ -89,7 +89,9 @@ body {
     border: solid black;
     border-width: 1px;
     border-radius: 10%;
-    width: 10%;
+    padding: 2px 8px;
+    width: auto;
+    min-width: 50px;
     height: 24px;
     font-size: 16px;
     line-height: 1;

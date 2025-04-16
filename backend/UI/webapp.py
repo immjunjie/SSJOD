@@ -7,7 +7,6 @@ import os
 app = Flask(__name__)
 app.secret_key = 'dojossjos'
 
-skip_cleanup = False
 log_thread = None
 is_logging = False
 UPLOAD_FOLDER = 'uploads'
@@ -16,14 +15,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def start_logging(sequence, uploaded_paths):
+    
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
-    print(gcode_path)
-    print(stl_path)
+
     if gcode_path and stl_path:
         global is_logging
         is_logging = True
-        logger.run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', 0.01, filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)  # This function should contain your while loop logic
+        logger.run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', 0.01, filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)  #changed order since link ones need to go at the end
     else:
         print("Missing G-code or STL file.")
         return redirect(url_for("index"))
@@ -38,7 +37,6 @@ def start():
     global log_thread, is_logging
     sequence = "100010000000"
     uploaded_paths = session.get('uploaded_paths', {})
-    print("Session contents:", uploaded_paths)
 
     gcode_exists = any(n.endswith('.gcode') for n in uploaded_paths)
     stl_exists = any(n.endswith('.stl') for n in uploaded_paths)

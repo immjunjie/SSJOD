@@ -63,7 +63,6 @@ function loadUploadedFiles() {
 
             if (data.files.length === 0) {
                 uploadedFiles.innerHTML = '';
-                document.getElementById('clear-all-files')?.classList.add('hidden');
                 return;
             }
 
@@ -79,10 +78,6 @@ function loadUploadedFiles() {
             html += "</ul>";
             uploadedFiles.innerHTML = html;
 
-            // Show clear button if hidden
-            const clearBtn = document.getElementById('clear-all-files');
-            if (clearBtn) clearBtn.classList.remove('hidden');
-
             // Attach event listeners to all delete buttons
             document.querySelectorAll('.delete-file').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -94,11 +89,3 @@ function loadUploadedFiles() {
             });
         });
 }
-
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('delete-file')) {
-        const filename = e.target.dataset.filename;
-        fetch(`/delete-file/${encodeURIComponent(filename)}`, { method: 'POST' })
-            .then(() => loadUploadedFiles());
-    }
-});
