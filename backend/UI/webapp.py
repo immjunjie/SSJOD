@@ -1,9 +1,8 @@
 from flask import Flask, render_template, redirect, url_for, request
+from flask_socketio import SocketIO, emit
 import threading
 import logger
 from filter_endpoints import filterMask
-
-
 
 listOfEndpoints = [
     "Head Position",
@@ -23,13 +22,23 @@ listOfEndpoints = [
 current_sequence = "1" * len(listOfEndpoints)
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 log_thread = None
 is_logging = False
 
 def start_logging(sequence):
     global is_logging
     is_logging = True
-    logger.run_logger('print_details.hdf5','http://143.239.73.224/api/v1/printer','backend/UI/_3DBenchy.stl','backend/UI/UMS5__3DBenchy.gcode',0.01,filterMask(sequence), sequence)
+    logger.run_logger_with_socket(
+        socketio=socketio,
+        hdf5_filename='print_details.hdf5',
+        base_url='http://143.239.73.224/api/v1/printer',
+        stl_path='backend/UI/_3DBenchy.stl',
+        gcode_path='backend/UI/UMS5__3DBenchy.gcode',
+        interval_time=0.5,
+        endpoints=filterMask(sequence),
+        sequence=sequence
+    )
 
 @app.route("/", methods=["GET"])
 def index():
@@ -63,4 +72,4 @@ def stop():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)
