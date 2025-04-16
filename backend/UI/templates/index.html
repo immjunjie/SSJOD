@@ -8,13 +8,41 @@
 <body>
     <div class="container">
         <h1>3D Printer Logger</h1>
+
         {% if logging %}
             <p>Status: <span class="active">Logging Active</span></p>
             <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
             <p>Status: <span class="inactive">Logging Stopped</span></p>
-            <a href="{{ url_for('start') }}" class="button start">Start Logging</a>
+            <form action="{{ url_for('start') }}" method="post">
+                <h3>Select endpoints to monitor:</h3>
+                {% for endpoint in listOfEndpoints %}
+                    <div style="text-align:left;">
+                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
+                            {% if sequence[loop.index0] == '1' %}checked{% endif %}>
+                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
+                    </div>
+                {% endfor %}
+                <button type="submit" class="button start">Start Logging</button>
+            </form>
         {% endif %}
+        <div>
+            <h3>Live Logs</h3>
+            <div id="log-output" style="max-height:300px; overflow:auto; border:1px solid #ccc; padding:10px; background:#f7f7f7;">
+                <p><i>Waiting for log data...</i></p>
+            </div>
+        </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('new_log', function(data) {
+            const logDiv = document.getElementById("log-output");
+            const p = document.createElement("p");
+            p.innerText = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
+            logDiv.prepend(p);
+        });
+    </script>
 </body>
 </html>
