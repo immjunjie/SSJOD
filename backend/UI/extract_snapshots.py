@@ -16,14 +16,14 @@ from numpy import ndarray, dtype
 class PrinterSnapshotter:
     """A class for fetching snapshots from a 3D printer camera and saving them in HDF5 file."""
 
-    def __init__(self, url, hdf5_file):
+    def __init__(self, url_snapshot, hdf5_file):
         """
         Initializes the PrinterSnapshotter.
         ARGS:
-            url(str): The URL of the printer camera.
+            url_snapshot(str): The URL of the printer camera.
             hdf5_file(str): Path to the HDF5 file where snaps will be stored.
         """
-        self.url = url
+        self.url_snapshot = url_snapshot
         self.hdf5_file = hdf5_file
 
     def fetch_snapshot(self) -> ndarray[tuple[int, ...], dtype[Any]] | None:
@@ -35,7 +35,7 @@ class PrinterSnapshotter:
             None if the request failed.
         """
         try:
-            response = requests.get(self.url, timeout=10)
+            response = requests.get(self.url_snapshot, timeout=10)
             if response.status_code == 200:
                 return np.frombuffer(response.content, dtype='uint8')
             else:
@@ -118,9 +118,9 @@ class PrinterSnapshotter:
 
 if __name__ == "__main__":
     #Constructor
-    url = "http://143.239.73.224:8080/?action=snapshot"
-    output_file = "printer_images.h5"
+    url_snapshot = "http://143.239.73.224:8080/?action=snapshot"
+    output_snapshot_hdf5file = "printer_images.h5"
 
     #Initialize functions invocation
-    snapper = PrinterSnapshotter(url, output_file)
+    snapper = PrinterSnapshotter(url_snapshot, output_snapshot_hdf5file)
     snapper.start_capturing()
