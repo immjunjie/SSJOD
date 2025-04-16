@@ -26,6 +26,7 @@ def start_logging(sequence, uploaded_paths):
         logger.run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', 0.01, filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)  # This function should contain your while loop logic
     else:
         print("Missing G-code or STL file.")
+        return redirect(url_for("index"))
 
 @app.route("/", methods=["GET"])
 def index():
@@ -39,10 +40,12 @@ def start():
     uploaded_paths = session.get('uploaded_paths', {})
     print("Session contents:", uploaded_paths)
 
-    if not is_logging:
+    gcode_exists = any(n.endswith('.gcode') for n in uploaded_paths)
+    stl_exists = any(n.endswith('.stl') for n in uploaded_paths)
+
+    if not is_logging and gcode_exists and stl_exists:
         log_thread = threading.Thread(target=start_logging, args=(sequence, uploaded_paths))
         log_thread.start()
-        is_logging = True
     return redirect(url_for("index"))
 
 @app.route("/stop")
