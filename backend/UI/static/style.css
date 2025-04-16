@@ -31,3 +31,84 @@ body {
 .inactive {
     color: red;
 }
+
+/* File Upload Box*/
+#file-upload-box {
+    border: 3px dashed #aaa;
+    border-radius: 10px;
+    padding: 6rem;
+    text-align: center;
+    color: #666;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-left: 25%;
+    margin-right: 25%;
+    margin-top: 20px;
+}
+  
+#file-upload-box:hover {
+    background-color: #eeeeee;
+    border-color: #00aaff;
+    color: #00aaff;
+}
+  
+#file-input {
+    display: none;
+}
+/* List of Uploaded files*/
+.file-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+  
+.file-container li {
+    background-color: #f7f7f7;
+    margin: 0.4rem;
+    margin-left: 25%;
+    margin-right: 25%;
+    padding: 0.6rem 1rem;
+    border-left: 4px solid;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #333;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+  
+.file-container li.gcode {
+    border-left-color: orange;
+}
+
+.file-container li.stl {
+    border-left-color: #4CAF50;
+}
+
+/* clear files buttons */
+.delete-file {
+    background-color: white;
+    border: solid black;
+    border-width: 1px;
+    border-radius: 10%;
+    width: 10%;
+    height: 24px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.delete-file:hover {
+    background-color: #c82333;
+}
+
+#clear-all-files {
+    margin-top: 20px;
+    background-color: #ff6347;
+}
+#clear-all-files:hover {
+    background-color: #e5533d;
+}
+
+/* Hidden Utility Class */
+.hidden {
+    display: none !important;
+}

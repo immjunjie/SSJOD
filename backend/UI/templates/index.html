@@ -16,5 +16,24 @@
             <a href="{{ url_for('start') }}" class="button start">Start Logging</a>
         {% endif %}
     </div>
+    <div id="file-upload-box">
+        Drag & drop files here, or click to upload (.gcode, .stl)
+    </div>
+    <input type="file" id="file-input" multiple accept=".gcode,.stl">
+      
+    <div id="uploaded-files" class="file-container">
+        {% if filenames %}
+            <strong>Uploaded Files:</strong>
+            <ul>
+            {% for filename in filenames %}
+                <li class="{% if filename.endswith('.gcode') %}gcode{% elif filename.endswith('.stl') %}stl{% endif %}">
+                    {{ filename }}
+                    <button class="delete-file" data-filename="{{ filename }}">clear</button>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>  
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

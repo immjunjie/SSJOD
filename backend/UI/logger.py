@@ -74,7 +74,7 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, endpoints, sequence):
+def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence,  stl_path, gcode_path):
     """Main logger: fetches printer data, stores it in structured HDF5 file."""
 
     global running
