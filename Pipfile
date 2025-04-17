@@ -10,6 +10,8 @@ uvicorn = {extras = ["standard"], version = "*"}
 requests = "*"
 h5py = "*"
 numpy = "*"
+beautifulsoup4 = "*"
+bs4 = "*"
 
 [dev-packages]
 
