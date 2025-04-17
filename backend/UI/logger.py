@@ -190,7 +190,7 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, end
                     socketio.emit('new_log', log_entry)
 
                 elapsed = time.perf_counter() - start_time
-                sleep_time = max(0, interval_time - elapsed)
+                #sleep_time = max(0, interval_time - elapsed)
                 #time.sleep(sleep_time)
 
         except KeyboardInterrupt:

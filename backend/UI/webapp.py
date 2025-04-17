@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import threading
 import logger
 from filter_endpoints import filterMask
