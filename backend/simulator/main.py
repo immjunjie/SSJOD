@@ -3,6 +3,52 @@ from fastapi.responses import RedirectResponse
 from .apis.cluster_api import ClusterAPI
 from .apis.swagger_api import SwaggerAPI
 import logging
+import sys
+from pathlib import Path
+
+# 将项目根目录添加到 Python 路径
+sys.path.append(str(Path(__file__).parent))
+
+# ========================================================
+# How to Run this?
+# --------------------------------------------------------
+'''UltiMaker Printer - Official Cura API URLs of WGB'''
+# http://143.239.73.224/docs/api/
+# http://143.239.73.224/cluster-api/v1/
+# --------------------------------------------------------
+'''method1 - docker'''
+# 1. download docker and install it into the documents/applications directory
+# 2. run the docker application at the background
+# 3. docker build -t simulator .
+# 4. docker run -p 8000:8000 simulator uvicorn backend.simulator.main:app --host 0.0.0.0 --port 8000
+# 5. visit 'http://localhost:8000/docs/api'
+# 6. visit 'http://localhost:8000/cluster-api/v1/'
+# --------------------------------------------------------
+# Optional (with the local machine ip addresses)
+# 4. ifconfig | grep "inet " | grep -v 127.0.0.1
+# 5. docker run -p <ip address>:8000:8000 simulator
+#    docker run -p 10.241.186.77:8000:8000 simulator
+# 6. visit 'http://10.241.186.77:8000/docs/api'
+# 7. visit 'http://10.241.186.77:8000/cluster-api/v1/'
+# --------------------------------------------------------
+'''method2 - pipenv'''
+# 1. pip install pipenv
+# or "pip3 install pipenv"
+# 2. python3 -m site --user-base
+# 3. which pipenv
+# 4. export PATH="$HOME/Library/Python/3.11/bin:$PATH"
+# 5. pipenv --version
+# 6. pipenv install
+# 7. pipenv run uvicorn backend.simulator.main:app --reload
+# --------------------------------------------------------
+# Optional (config the shell with path export)
+# echo 'export PATH="$HOME/Library/Python/3.11/bin:$PATH"' >> ~/.zshrc
+# source ~/.zshrc
+# --------------------------------------------------------
+# If needed:
+# export LANG=en_US.UTF-8
+# --------------------------------------------------------
+
 
 # Configure basic logging settings
 logging.basicConfig(level=logging.INFO)
