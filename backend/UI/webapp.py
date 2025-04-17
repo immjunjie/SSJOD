@@ -1,7 +1,8 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify, session
 import threading
-import logger  # This will be your modified logger script
+import logger  # Your modified logger script
 from filter_endpoints import filterMask
+import requests
 import os
 
 app = Flask(__name__)
@@ -14,23 +15,50 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-def start_logging(sequence, uploaded_paths):
-    
+def start_logging(sequence, uploaded_paths, printer_ip):
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
 
-    if gcode_path and stl_path:
-        global is_logging
-        is_logging = True
-        logger.run_logger('print_details.hdf5', 'http://143.239.73.224/api/v1/printer', 0.01, filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)  #changed order since link ones need to go at the end
-    else:
-        print("Missing G-code or STL file.")
-        return redirect(url_for("index"))
+    if not (gcode_path and stl_path and printer_ip):
+        print("Missing G-code, STL file, or printer IP.")
+        return
+
+    test_url = f"http://{printer_ip}/api/v1/printer"
+    try:
+        response = requests.get(test_url, timeout=2)
+        if response.status_code != 200:
+            print(f"Printer at {printer_ip} responded with status {response.status_code}. Aborting logger.")
+            return
+    except requests.RequestException as e:
+        print(f"Could not reach printer at {printer_ip}: {e}")
+        return
+
+    global is_logging
+    is_logging = True
+    logger.run_logger('print_details.hdf5', test_url, 0.01,
+                      filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)
 
 @app.route("/", methods=["GET"])
 def index():
     filenames = list(session.get('uploaded_paths', {}).keys())
-    return render_template("index.html", logging=is_logging, filenames=filenames)
+    printer_ip = session.get('printer_ip')
+    printer_error = session.pop('printer_error', '')
+    return render_template("index.html", logging=is_logging, filenames=filenames, printer_ip=printer_ip, printer_error=printer_error)
+
+@app.route("/set-printer", methods=["POST"])
+def set_printer():
+    ip = request.form.get('printer_ip')
+    if ip:
+        try:
+            resp = requests.get(f"http://{ip}/api/v1/printer", timeout=2)
+            if resp.status_code == 200:
+                session['printer_ip'] = ip
+                session['printer_error'] = ''
+            else:
+                session['printer_error'] = "Printer did not respond correctly."
+        except requests.RequestException:
+            session['printer_error'] = "Failed to connect to printer."
+    return redirect(url_for('index'))
 
 @app.route("/start")
 def start():
@@ -42,7 +70,8 @@ def start():
     stl_exists = any(n.endswith('.stl') for n in uploaded_paths)
 
     if not is_logging and gcode_exists and stl_exists:
-        log_thread = threading.Thread(target=start_logging, args=(sequence, uploaded_paths))
+        printer_ip = session.get('printer_ip')
+        log_thread = threading.Thread(target=start_logging, args=(sequence, uploaded_paths, printer_ip))
         log_thread.start()
     return redirect(url_for("index"))
 

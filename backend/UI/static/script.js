@@ -10,7 +10,7 @@ uploadBox.addEventListener('dragover', (e) => {
 });
 
 uploadBox.addEventListener('dragleave', () => {
-    uploadBox.classList.remove('dragover');
+  uploadBox.classList.remove('dragover');
 });
 
 uploadBox.addEventListener('drop', (e) => {
@@ -24,68 +24,59 @@ fileInput.addEventListener('change', () => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-    loadUploadedFiles();
-});
-
-startLoggingButton.addEventListener('click', () => {
-    fetch('/start')
-        .then(() => {
-            loadUploadedFiles();
-        });
+  loadUploadedFiles();
 });
 
 function handleFiles(files) {
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append(file.name, file);
-    }
-  
-    fetch('/upload', {
-      method: 'POST',
-      body: formData
-    })
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append(file.name, file);
+  }
+
+  fetch('/upload', {
+    method: 'POST',
+    body: formData
+  })
     .then(res => res.json())
     .then(() => {
-        loadUploadedFiles();  // Just refresh the file list completely
+      loadUploadedFiles();
     })
     .catch(err => {
       console.error(err);
       uploadedFiles.textContent = "Error uploading files.";
     });
-  }
+}
 
 function loadUploadedFiles() {
-    fetch('/uploaded-files')
-        .then(response => response.json())
-        .then(data => {
-            const uploadedFiles = document.getElementById('uploaded-files');
-            if (!uploadedFiles) return;
+  fetch('/uploaded-files')
+    .then(response => response.json())
+    .then(data => {
+      if (!uploadedFiles) return;
 
-            if (data.files.length === 0) {
-                uploadedFiles.innerHTML = '';
-                return;
-            }
+      if (data.files.length === 0) {
+        uploadedFiles.innerHTML = '';
+        return;
+      }
 
-            let html = "<strong>Uploaded Files:</strong><ul>";
-            data.files.forEach(filename => {
-                const typeClass = filename.endsWith('.gcode') ? 'gcode' :
-                                  filename.endsWith('.stl') ? 'stl' : '';
-                html += `<li class="${typeClass}">
-                    ${filename}
-                    <button class="delete-file" data-filename="${filename}">clear</button>
-                </li>`;
-            });
-            html += "</ul>";
-            uploadedFiles.innerHTML = html;
+      let html = "<strong>Uploaded Files:</strong><ul>";
+      data.files.forEach(filename => {
+        const typeClass = filename.endsWith('.gcode') ? 'gcode' :
+                          filename.endsWith('.stl') ? 'stl' : '';
+        html += `<li class="${typeClass}">
+          ${filename}
+          <button class="delete-file" data-filename="${filename}">clear</button>
+        </li>`;
+      });
+      html += "</ul>";
+      uploadedFiles.innerHTML = html;
 
-            // Attach event listeners to all delete buttons
-            document.querySelectorAll('.delete-file').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const filename = btn.dataset.filename;
-                    fetch(`/delete-file/${encodeURIComponent(filename)}`, {
-                        method: 'POST'
-                    }).then(() => loadUploadedFiles());
-                });
-            });
+      document.querySelectorAll('.delete-file').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const filename = btn.dataset.filename;
+          fetch(`/delete-file/${encodeURIComponent(filename)}`, {
+            method: 'POST'
+          }).then(() => loadUploadedFiles());
         });
+      });
+    });
 }

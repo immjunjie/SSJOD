@@ -20,7 +20,20 @@
         Drag & drop files here, or click to upload (.gcode, .stl)
     </div>
     <input type="file" id="file-input" multiple accept=".gcode,.stl">
-      
+    <br>
+
+    <form method="POST" action="/set-printer" class="printer-ip-form">
+        <label for="printer_ip">Printer IP:</label>
+        <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+        <button type="submit">Set Printer</button>
+    </form>
+    {% if printer_ip %}
+        <p><strong>Current Printer:</strong> {{ printer_ip }}</p>
+    {% endif %}
+    {% if printer_error %}
+        <p style="color: red;"><strong>Error:</strong> {{ printer_error }}</p>
+    {% endif %}
+    <br>
     <div id="uploaded-files" class="file-container">
         {% if filenames %}
             <strong>Uploaded Files:</strong>
