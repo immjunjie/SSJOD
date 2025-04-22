@@ -50,7 +50,7 @@ def set_printer():
     ip = request.form.get('printer_ip')
     if ip:
         try:
-            resp = requests.get(f"http://{ip}/api/v1/printer", timeout=2)
+            resp = requests.get(f"http://{ip}/docs/printer", timeout=2)
             if resp.status_code == 200:
                 session['printer_ip'] = ip
                 session['printer_error'] = ''
