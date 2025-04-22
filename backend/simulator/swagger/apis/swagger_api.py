@@ -1,7 +1,6 @@
-from .base_api import BaseAPI
-from ..routers.swagger import (
-    air_manager,ambient_temperature,authentication,
-    camera,history,materials,network,print_job,printer,system
+from backend.simulator.base.apis.base_api import BaseAPI
+from backend.simulator.swagger.apis.endpoints import (
+    air_manager, ambient_temperature, camera, network, printer, system, authentication, materials, print_job, history
 )
 
 

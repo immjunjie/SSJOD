@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from backend.simulator.services.swagger.printer_service import PrinterService
+from backend.simulator.swagger.services.printer_service import PrinterService
 
 router = APIRouter()
 

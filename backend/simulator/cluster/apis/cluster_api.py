@@ -1,8 +1,7 @@
-from .base_api import BaseAPI
-from ..routers.cluster import (
-    cloud, debug, materials,
-    print_jobs, printers, setting, system
-)
+from backend.simulator.base.apis.base_api import BaseAPI
+from backend.simulator.cluster.apis.endpoints import print_jobs, system
+from backend.simulator.cluster.apis.endpoints import setting, materials, debug, cloud, printers
+
 
 class ClusterAPI(BaseAPI):
     """Cluster API Implementation"""

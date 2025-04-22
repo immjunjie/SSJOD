@@ -21,5 +21,5 @@ class BaseAPI:
         )
 
     def register_routers(self):
-        """Register routers (implemented by the subclass)"""
+        """Register cluster (implemented by the subclass)"""
         raise NotImplementedError

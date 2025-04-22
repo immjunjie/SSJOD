@@ -18,7 +18,7 @@ class PrinterDataGenerator:
             "validate_header": {}
         }
 
-    def generate_printer_status() -> Dict[str, Any]:
+    def generate_printer_status(self) -> Dict[str, Any]:
         return {
             "status": random.choice(["printing", "idle", "error"]),
         }

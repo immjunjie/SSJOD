@@ -5,6 +5,6 @@ router = APIRouter()
 @router.get("/print_job", tags=["PrintJob"])
 def get_print_job():
     status = True
-    if status != True:
-        return []
-    return {"Message": "mySuccessful"}
+    if status:
+        return {"Message": "mySuccessful"}
+    return []
