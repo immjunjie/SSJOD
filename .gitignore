@@ -19,4 +19,8 @@ backend/UI/__pycache__/logger.cpython-311.pyc
 UI/test.py
 logger.cpython-311.pyc
 __pycache__
-
+__pycache__/
+*.pyc
+*..DS_Store
+.DS_Store
+services/.DS_Store
