@@ -42,7 +42,9 @@ def start_logging(sequence, uploaded_paths, printer_ip):
         print("Missing G-code, STL file, or printer IP.")
         return
 
-    test_url = f"http://{printer_ip}/api/v1/printer"
+
+    #test_url = f"http://{printer_ip}/docs/printer" <----- for simulator only
+    test_url = f"http://{printer_ip}/api/v1/printer"# <--- for actual printer
     try:
         response = requests.get(test_url, timeout=2)
         if response.status_code != 200:
@@ -57,7 +59,8 @@ def start_logging(sequence, uploaded_paths, printer_ip):
     logger.run_logger_with_socket(
         socketio=socketio,
         hdf5_filename='print_details.hdf5',
-        base_url=f'http://{printer_ip}/api/v1/printer',
+        #base_url = f"http://{printer_ip}/docs/printer" <----- for simulator only
+        base_url=f'http://{printer_ip}/api/v1/printer', # <--- for actual printer
         interval_time=0.0001,
         endpoints=filterMask(sequence),
         sequence=sequence,
