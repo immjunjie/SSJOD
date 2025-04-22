@@ -11,8 +11,8 @@ from filter_endpoints import filterMask
 running = False
 
 # Organized endpoints: priority order (position, temperature, status, others)
-
-
+def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path):
+    run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio)
 
 def query(base_url, name, path):
     try:
@@ -40,7 +40,7 @@ def convert_to_float(val):
 def extractLayerHeightgcode(gcode_path):
     """Extracts estimated layer height from G-code file comments."""
     layer_count, min_z, max_z = None, None, None
-
+    print(gcode_path)
     try:
         with open(gcode_path, "r", encoding="utf-8", errors="ignore") as file:
             for line in file:
@@ -53,7 +53,7 @@ def extractLayerHeightgcode(gcode_path):
                 if layer_count and min_z is not None and max_z is not None:
                     break
 
-        if layer_count and min_z is not None and max_z is not None:
+        if layer_count is not None and min_z is not None and max_z is not None:
             return round((max_z - min_z) / (layer_count - 1), 4)
     except Exception as e:
         print(f"Failed to extract layer height: {e}")
@@ -74,7 +74,7 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence,  stl_path, gcode_path):
+def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio):
     """Main logger: fetches printer data, stores it in structured HDF5 file."""
 
     global running
@@ -129,7 +129,6 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence,  stl
                 # Query all endpoints in parallel
                 futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
                 results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
-
                 timestamp = datetime.now().isoformat()
 
                 # Position
@@ -150,39 +149,48 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence,  stl
 
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
-                
-                # === STORAGE ===
+
+                # === STORE DATA ===
                 if sequence[0] == '1':
-                    scan_grp.create_dataset("position", data=position_xyz) # 1
+                    scan_grp.create_dataset("position", data=position_xyz)
                 if sequence[1] == '1':
-                    bed_info = results["bed_temp"] # 2
+                    bed_info = results["bed_temp"]
                     scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
                     scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
                     scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
                 if sequence[2] == '1':
-                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"])) # 3
+                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"]))
                 if sequence[3] == '1':
-                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"])) # 4
+                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"]))
                 if sequence[4] == '1':
-                    scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0))) # 5
+                    scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0)))
                 if sequence[5] == '1':
-                    scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt) # 6
+                    scan_grp.create_dataset("printer_status", data=str(results.get("status", {})), dtype=dt)
                 if sequence[6] == '1':
-                    scan_grp.create_dataset("material_extruded", data=convert_to_float(results.get("material_extruded", 0))) # 7
+                    scan_grp.create_dataset("material_extruded", data=convert_to_float(results.get("material_extruded", 0)))
                 if sequence[7] == '1':
-                    scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0))) # 8
+                    scan_grp.create_dataset("led_status", data=convert_to_float(results.get("led", 0)))
                 if sequence[8] == '1':
-                    scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0))) # 9
+                    scan_grp.create_dataset("jerk", data=convert_to_float(results.get("jerk", 0)))
                 if sequence[9] == '1':
-                    scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0))) # 10
+                    scan_grp.create_dataset("active_material", data=convert_to_float(results.get("active_material", 0)))
                 if sequence[10] == '1':
-                    scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0))) # 11
+                    scan_grp.create_dataset("length_remaining", data=convert_to_float(results.get("length_remaining", 0)))
                 if sequence[11] == '1':
-                    scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0))) # 12
+                    scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0)))
 
-                # === Metadata ===
-                scan_grp.attrs['position_Z'] = current_z
+                # === TIMESTAMP ===
                 scan_grp.attrs['timestamp'] = timestamp
+
+                # === EMIT VIA SOCKET ===
+                if socketio:
+                    log_entry = {
+                        'scan': scannum,
+                        'layer': layer,
+                        'position_z': round(current_z, 2),
+                        'timestamp': timestamp,
+                    }
+                    socketio.emit('new_log', log_entry)
 
                 # Handle timing and wait interval
                 elapsed = time.perf_counter() - start_time
@@ -199,8 +207,8 @@ if __name__ == "__main__":
     run_logger(
         hdf5_filename='print_details.hdf5',
         base_url='http://143.239.73.224/api/v1/printer',
-        stl_path='backend/UI/_3DBenchy.stl',
-        gcode_path='backend/UI/UMS5__3DBenchy.gcode',
         interval_time=0.01,
-        bit_sequence = filterMask("111111111111")
+        sequence = filterMask("111111111111"),
+        stl_path = 'uploads/_3DBenchy.stl',
+        gcode_path = 'uploads/UMS5__3DBenchy.gcode'
     )

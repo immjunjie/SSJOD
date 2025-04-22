@@ -1,12 +1,31 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify, session
+from flask_socketio import SocketIO, emit
 import threading
-import logger  # Your modified logger script
+import logger
 from filter_endpoints import filterMask
 import requests
 import os
 
+listOfEndpoints = [
+    "Head Position",
+    "Bed Temperature",
+    "Nozzle_temp_current",
+    "Nozzle_temp_target",
+    "Time_spent_hot",
+    "Status",
+    "Material Extruded",
+    "Led",
+    "Jerk",
+    "Active Material",
+    "Remaining Length",
+    "Max Speed"
+]
+
+current_sequence = "1" * len(listOfEndpoints)
+
 app = Flask(__name__)
 app.secret_key = 'dojossjos'
+socketio = SocketIO(app)
 
 log_thread = None
 is_logging = False
@@ -35,15 +54,22 @@ def start_logging(sequence, uploaded_paths, printer_ip):
 
     global is_logging
     is_logging = True
-    logger.run_logger('print_details.hdf5', test_url, 0.01,
-                      filterMask(sequence), sequence, stl_path=stl_path, gcode_path=gcode_path)
+    logger.run_logger_with_socket(
+        socketio=socketio,
+        hdf5_filename='print_details.hdf5',
+        base_url=f'http://{printer_ip}/api/v1/printer',
+        interval_time=0.0001,
+        endpoints=filterMask(sequence),
+        sequence=sequence,
+        stl_path=stl_path,
+        gcode_path=gcode_path)
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def index():
     filenames = list(session.get('uploaded_paths', {}).keys())
     printer_ip = session.get('printer_ip')
     printer_error = session.pop('printer_error', '')
-    return render_template("index.html", logging=is_logging, filenames=filenames, printer_ip=printer_ip, printer_error=printer_error)
+    return render_template("index.html", logging=is_logging, filenames=filenames, printer_ip=printer_ip, printer_error=printer_error, listOfEndpoints=listOfEndpoints, sequence=current_sequence)
 
 @app.route("/set-printer", methods=["POST"])
 def set_printer():
@@ -60,19 +86,30 @@ def set_printer():
             session['printer_error'] = "Failed to connect to printer."
     return redirect(url_for('index'))
 
-@app.route("/start")
+@app.route("/start", methods=['GET', 'POST'])
 def start():
-    global log_thread, is_logging
-    sequence = "100010000000"
+    global log_thread, is_logging, current_sequence
+
+    sequence = ""
+    for i in range(len(listOfEndpoints)):
+        checkbox_name = f"ep{i}"
+        sequence += '1' if checkbox_name in request.form else '0'
+
+    current_sequence = sequence
+
     uploaded_paths = session.get('uploaded_paths', {})
 
     gcode_exists = any(n.endswith('.gcode') for n in uploaded_paths)
     stl_exists = any(n.endswith('.stl') for n in uploaded_paths)
+    print(gcode_exists)
+    print(stl_exists)
 
     if not is_logging and gcode_exists and stl_exists:
         printer_ip = session.get('printer_ip')
         log_thread = threading.Thread(target=start_logging, args=(sequence, uploaded_paths, printer_ip))
         log_thread.start()
+        is_logging = True
+
     return redirect(url_for("index"))
 
 @app.route("/stop")
@@ -116,4 +153,4 @@ def delete_file(filename):
     return jsonify(success=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
