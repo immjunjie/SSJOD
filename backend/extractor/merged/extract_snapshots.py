@@ -5,6 +5,8 @@ import h5py
 import numpy as np
 import time
 from datetime import datetime
+from PIL import Image
+import io
 
 from fastapi.encoders import isoformat
 from numpy import ndarray
@@ -15,14 +17,14 @@ from pullFromPrint import log_printer_data
 class PrinterSnapshotter:
     """A class for fetching snapshots from a 3D printer camera and saving them in HDF5 file."""
 
-    def __init__(self, url, hdf5_file):
+    def __init__(self, url_snapshot, hdf5_file):
         """
         Initializes the PrinterSnapshotter.
         ARGS:
-            url(str): The URL of the printer camera.
+            url_snapshot(str): The URL of the printer camera.
             hdf5_file(str): Path to the HDF5 file where snaps will be stored.
         """
-        self.url = url
+        self.url_snapshot = url_snapshot
         self.hdf5_file = hdf5_file
 
     def fetch_snapshot(self) -> ndarray | None:
@@ -33,7 +35,7 @@ class PrinterSnapshotter:
             ndarray if the request success | None if the request failed.
         """
         try:
-            response = requests.get(self.url, timeout=10)
+            response = requests.get(self.url_snapshot, timeout=10)
             if response.status_code == 200:
                 return np.frombuffer(response.content, dtype='uint8')
             else:
@@ -86,6 +88,8 @@ class PrinterSnapshotter:
         except IOError as e:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Failed to save image locally: {e}")
 
+    # def compress_image_to_hdf5(self):
+
     def monitor_layer_change(self, hdf, save_folder, current_count, last_recorded_layer):
         """Checking for layer changes and capture
         ARGS:
@@ -95,9 +99,9 @@ class PrinterSnapshotter:
         RETURN:
             :return None
             """
-
+        current_layer = 0 #TEST
         while True:
-            current_layer = log_printer_data()
+            # current_layer = log_printer_data() #TEST
 
             if not isinstance(current_layer, int):
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] No layer info retrieved. Retrying...")
@@ -110,18 +114,18 @@ class PrinterSnapshotter:
                 if snapshot is not None:
                     if self.save_snapshot_hdf(hdf, snapshot, current_count):
                         self.save_snapshot_locally(snapshot, save_folder, current_count + 1)
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] Saved image #{current_count + 1}")
+                        print(f"[{datetime.now().strftime('%H:%M:%S:%MS')}] Saved image #{current_count + 1}")
                         last_recorded_layer = current_layer
                         current_count += 1
+                        current_layer+= 1 #TEST
                 else:
                     print("Snapshot fetch failed, skipping this layer.")
-            time.sleep(1)  # Avoid spamming the printer
+            # time.sleep(1)  # Avoid spamming the printer
 
     def start_capturing(self, save_folder="printer_images"):
         """
-
         ARGS:
-            :param save_folder: str.  Directory to save local .jpg snapshot fot easier check.
+            :param save_folder: str.  Directory to save local snapshot fot easier check.
         RETURN
             :return None
         """
@@ -139,9 +143,9 @@ class PrinterSnapshotter:
 
 if __name__ == "__main__":
     #Constructor
-    url = "http://143.239.73.224:8080/?action=snapshot"
-    output_file = "printer_images.h5"
+    url_snapshot = "http://143.239.73.224:8080/?action=snapshot"
+    output_snapshot_hdf5file = "printer_images.h5"
 
     #Initialize functions invocation
-    snapper = PrinterSnapshotter(url, output_file)
+    snapper = PrinterSnapshotter(url_snapshot, output_snapshot_hdf5file)
     snapper.start_capturing()
