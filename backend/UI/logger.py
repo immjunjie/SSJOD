@@ -194,10 +194,8 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
 
                 # Handle timing and wait interval
                 elapsed = time.perf_counter() - start_time
-                sleep_time = max(0, interval_time - elapsed)
-                time.sleep(sleep_time)
-
-                print(f"Scan {scannum}: {elapsed + sleep_time:.3f}s  Position Z: {current_z:.2f}  Layer: {layer}")
+                #sleep_time = max(0, interval_time - elapsed)
+                #time.sleep(sleep_time)
 
         except KeyboardInterrupt:
             print("Logging stopped.")

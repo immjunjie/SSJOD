@@ -70,16 +70,49 @@
         {% endif %}
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    </div>
+
+
+    <div class="log-section">
+        <h3>Live Logs</h3>
+        <div id="log-output">
+        </div>
+        <button class="button clear" onclick="clearLogs()">Clear Logs</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <script>
         const socket = io();
+        let logs = JSON.parse(localStorage.getItem("printerLogs") || "[]");
+
+        const logDiv = document.getElementById("log-output");
+
+        // On page load, restore old logs
+        logs.forEach(entry => {
+            const p = document.createElement("p");
+            p.innerText = entry;
+            logDiv.appendChild(p);
+        });
 
         socket.on('new_log', function(data) {
-            const logDiv = document.getElementById("log-output");
+            const logEntry = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
+            logs.push(logEntry);
+            if (logs.length > 500) logs.shift(); // limit memory
+
+            localStorage.setItem("printerLogs", JSON.stringify(logs));
+
             const p = document.createElement("p");
-            p.innerText = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
-            logDiv.prepend(p);
+            p.innerText = logEntry;
+            logDiv.appendChild(p);
+
+            logDiv.scrollTop = logDiv.scrollHeight; // auto-scroll
         });
+
+        function clearLogs() {
+            logs = [];
+            localStorage.removeItem("printerLogs");
+            logDiv.innerHTML = "";  // clear the displayed logs
+}
     </script>
 </body>
 </html>

@@ -1,16 +1,22 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
-    text-align: center;
     padding-top: 50px;
+    margin: 0;
 }
+
 .container {
     background: white;
     padding: 30px;
+    max-width: 900px;
     border-radius: 10px;
     display: inline-block;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+    margin: auto;
+    display: block;
 }
+
 .button {
     display: inline-block;
     margin-top: 20px;
@@ -19,15 +25,19 @@ body {
     text-decoration: none;
     color: white;
 }
+
 .start {
     background-color: #28a745;
 }
+
 .stop {
     background-color: #dc3545;
 }
+
 .active {
     color: green;
 }
+
 .inactive {
     color: red;
 }
@@ -113,4 +123,30 @@ body {
 /* Hidden Utility Class */
 .hidden {
     display: none !important;
+}
+.log-section {
+    margin: 40px auto;
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+#log-output {
+    background: #1e1e1e;
+    color: #dcdcdc;
+    font-family: monospace;
+    font-size: 14px;
+    height: 300px;
+    overflow-y: scroll;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+
+.clear {
+    background-color: #6c757d;
 }
