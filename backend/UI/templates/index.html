@@ -30,11 +30,11 @@
             </form>
         {% endif %}
 
-         <div>
+        <div class="log-section">
             <h3>Live Logs</h3>
-            <div id="log-output" style="max-height:300px; overflow:auto; border:1px solid #ccc; padding:10px; background:#f7f7f7;">
-                <p><i>Waiting for log data...</i></p>
+            <div id="log-output">
             </div>
+            <button class="button clear" onclick="clearLogs()">Clear Logs</button>
         </div>
 
     </div>
@@ -73,12 +73,7 @@
     </div>
 
 
-    <div class="log-section">
-        <h3>Live Logs</h3>
-        <div id="log-output">
-        </div>
-        <button class="button clear" onclick="clearLogs()">Clear Logs</button>
-    </div>
+  
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <script>
