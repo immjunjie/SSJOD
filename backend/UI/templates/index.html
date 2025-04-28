@@ -13,9 +13,11 @@
             <p>Status: <span class="active">Logging Active</span></p>
             <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
+
             <p>Status: <span class="inactive">Logging Stopped</span></p>
             <form action="{{ url_for('start') }}" method="post">
                 <h3>Select endpoints to monitor:</h3>
+
                 {% for endpoint in listOfEndpoints %}
                     <div style="text-align:left;">
                         <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
@@ -23,16 +25,51 @@
                         <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
                     </div>
                 {% endfor %}
+
                 <button type="submit" class="button start">Start Logging</button>
             </form>
         {% endif %}
-        <div>
+
+         <div>
             <h3>Live Logs</h3>
             <div id="log-output" style="max-height:300px; overflow:auto; border:1px solid #ccc; padding:10px; background:#f7f7f7;">
                 <p><i>Waiting for log data...</i></p>
             </div>
         </div>
+
     </div>
+    <div id="file-upload-box">
+        Drag & drop files here, or click to upload (.gcode, .stl)
+    </div>
+    <input type="file" id="file-input" multiple accept=".gcode,.stl">
+    <br>
+
+    <form method="POST" action="/set-printer" class="printer-ip-form">
+        <label for="printer_ip">Printer IP:</label>
+        <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+        <button type="submit">Set Printer</button>
+    </form>
+    {% if printer_ip %}
+        <p><strong>Current Printer:</strong> {{ printer_ip }}</p>
+    {% endif %}
+    {% if printer_error %}
+        <p style="color: red;"><strong>Error:</strong> {{ printer_error }}</p>
+    {% endif %}
+    <br>
+    <div id="uploaded-files" class="file-container">
+        {% if filenames %}
+            <strong>Uploaded Files:</strong>
+            <ul>
+            {% for filename in filenames %}
+                <li class="{% if filename.endswith('.gcode') %}gcode{% elif filename.endswith('.stl') %}stl{% endif %}">
+                    {{ filename }}
+                    <button class="delete-file" data-filename="{{ filename }}">clear</button>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <script>
         const socket = io();

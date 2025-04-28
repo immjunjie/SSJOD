@@ -10,8 +10,9 @@ from filter_endpoints import filterMask
 # Global control variable
 running = False
 
-def run_logger_with_socket(socketio, hdf5_filename, base_url, stl_path, gcode_path, interval_time, endpoints, sequence):
-    run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, endpoints, sequence, socketio=socketio)
+# Organized endpoints: priority order (position, temperature, status, others)
+def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path):
+    run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio)
 
 def query(base_url, name, path):
     try:
@@ -39,7 +40,7 @@ def convert_to_float(val):
 def extractLayerHeightgcode(gcode_path):
     """Extracts estimated layer height from G-code file comments."""
     layer_count, min_z, max_z = None, None, None
-
+    print(gcode_path)
     try:
         with open(gcode_path, "r", encoding="utf-8", errors="ignore") as file:
             for line in file:
@@ -52,7 +53,7 @@ def extractLayerHeightgcode(gcode_path):
                 if layer_count and min_z is not None and max_z is not None:
                     break
 
-        if layer_count and min_z is not None and max_z is not None:
+        if layer_count is not None and min_z is not None and max_z is not None:
             return round((max_z - min_z) / (layer_count - 1), 4)
     except Exception as e:
         print(f"Failed to extract layer height: {e}")
@@ -73,8 +74,8 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, endpoints, sequence, socketio=None):
-    """Main logger: fetches printer data, stores it in structured HDF5 file, and optionally emits via SocketIO."""
+def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio):
+    """Main logger: fetches printer data, stores it in structured HDF5 file."""
 
     global running
     if running:
@@ -94,12 +95,12 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, end
     print("Logging started. Press Ctrl+C to stop.")
 
     with h5py.File(hdf5_filename, "w") as f:
-        # Preprint metadata
+        # Preprint metadata section
         preprint_grp = f.create_group('preprint')
         stl_grp = preprint_grp.create_group('STL')
         gcode_grp = preprint_grp.create_group('Gcode')
 
-        # Store binary files and raw G-code
+        # Store binary files and raw G-code text
         store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", "STL file in binary")
         store_file_with_metadata(gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", "G-code file in binary")
 
@@ -125,17 +126,19 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, end
                 scannum += 1
                 start_time = time.perf_counter()
 
-                # Query endpoints in parallel
+                # Query all endpoints in parallel
                 futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
                 results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
                 timestamp = datetime.now().isoformat()
 
+                # Position
                 try:
                     pos = results["head_pos"]
                     position_xyz = np.array([float(pos["x"]), float(pos["y"]), float(pos["z"])])
                 except Exception:
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
+                # Layer tracking
                 current_z = position_xyz[2]
                 if (current_z >= last_z + (layer_height - 0.05)) and (current_z <= last_z + (layer_height + 0.05)) or last_z == 0:
                     layer += 1
@@ -189,24 +192,23 @@ def run_logger(hdf5_filename, base_url, stl_path, gcode_path, interval_time, end
                     }
                     socketio.emit('new_log', log_entry)
 
+                # Handle timing and wait interval
                 elapsed = time.perf_counter() - start_time
                 sleep_time = max(0, interval_time - elapsed)
-                #time.sleep(sleep_time)
+                time.sleep(sleep_time)
+
+                print(f"Scan {scannum}: {elapsed + sleep_time:.3f}s  Position Z: {current_z:.2f}  Layer: {layer}")
 
         except KeyboardInterrupt:
-            print("Logging stopped by Keyboard")
-        finally:
-            running = False
-
-
+            print("Logging stopped.")
 
 
 if __name__ == "__main__":
     run_logger(
         hdf5_filename='print_details.hdf5',
         base_url='http://143.239.73.224/api/v1/printer',
-        stl_path='backend/UI/_3DBenchy.stl',
-        gcode_path='backend/UI/UMS5__3DBenchy.gcode',
         interval_time=0.01,
-        bit_sequence = filterMask("111111111111")
+        sequence = filterMask("111111111111"),
+        stl_path = 'uploads/_3DBenchy.stl',
+        gcode_path = 'uploads/UMS5__3DBenchy.gcode'
     )
