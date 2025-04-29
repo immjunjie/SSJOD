@@ -5,11 +5,6 @@ import h5py
 import numpy as np
 import time
 from datetime import datetime
-from PIL import Image
-import io
-
-from fastapi.encoders import isoformat
-from numpy import ndarray
 
 
 class PrinterSnapshotter:
@@ -58,12 +53,14 @@ class PrinterSnapshotter:
             Bool value. Success | Not success
         """
         try:
+            count = hdf.attrs.get('count', 0)
             hdf['images'].resize((current_count + 1,))
             hdf['images'][current_count] = snapshot
 
             hdf['timestamps'].resize((current_count + 1,))
             hdf['timestamps'][current_count] = datetime.now().isoformat()
 
+            hdf.attrs['count'] = count + 1
             hdf.flush()
             return True
         except Exception as e:
@@ -86,65 +83,4 @@ class PrinterSnapshotter:
         except IOError as e:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Failed to save image locally: {e}")
 
-    # def compress_image_to_hdf5(self):
 
-    def monitor_layer_change(self, hdf, save_folder, current_count, last_recorded_layer):
-        """Checking for layer changes and capture
-        ARGS:
-            :param save_folder: str
-            :param current_count: int
-            :param last_recorded_layer: int
-        RETURN:
-            :return None
-            """
-        current_layer = 0 #TEST
-        while True:
-            # current_layer = log_printer_data() #TEST
-
-            if not isinstance(current_layer, int):
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] No layer info retrieved. Retrying...")
-                time.sleep(1)
-                continue
-
-            if current_layer != last_recorded_layer:
-                snapshot = self.fetch_snapshot()
-
-                if snapshot is not None:
-                    if self.save_snapshot_hdf(hdf, snapshot, current_count):
-                        self.save_snapshot_locally(snapshot, save_folder, current_count + 1)
-                        print(f"[{datetime.now().strftime('%H:%M:%S:%MS')}] Saved image #{current_count + 1}")
-                        last_recorded_layer = current_layer
-                        current_count += 1
-                        current_layer+= 1 #TEST
-                        print(f"Current layer: {current_layer}")
-                else:
-                    print("Snapshot fetch failed, skipping this layer.")
-            # time.sleep(1)  # Avoid spamming the printer
-
-    def start_capturing(self, save_folder="printer_images"):
-        """
-        ARGS:
-            :param save_folder: str.  Directory to save local snapshot fot easier check.
-        RETURN
-            :return None
-        """
-        os.makedirs(save_folder, exist_ok=True)
-        self.hdf_structure_init()
-
-        try:
-            with h5py.File(self.hdf5_file, 'a') as hdf:
-                current_count = hdf['images'].shape[0] #
-                last_recorded_layer = -1 #Tracks last saved layer
-                self.monitor_layer_change(hdf, save_folder, current_count, last_recorded_layer)
-        except KeyboardInterrupt:
-            print("Stopping snapshot capture")
-
-
-if __name__ == "__main__":
-    #Constructor
-    url_snapshot = "http://143.239.73.224:8080/?action=snapshot"
-    output_snapshot_hdf5file = "printer_images.h5"
-
-    #Initialize functions invocation
-    snapper = PrinterSnapshotter(url_snapshot, output_snapshot_hdf5file)
-    snapper.start_capturing()
