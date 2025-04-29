@@ -42,6 +42,14 @@ body {
     color: red;
 }
 
+#settings {
+    text-align: left;
+}
+
+#endpoints {
+    text-align: left;
+}
+
 /* File Upload Box*/
 #file-upload-box {
     border: 3px dashed #aaa;
@@ -51,8 +59,6 @@ body {
     color: #666;
     cursor: pointer;
     transition: 0.2s;
-    margin-left: 25%;
-    margin-right: 25%;
     margin-top: 20px;
 }
   
@@ -125,6 +131,16 @@ body {
     display: none !important;
 }
 .log-section {
+    margin: 40px auto;
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+.upload-section {
     margin: 40px auto;
     max-width: 900px;
     background: #ffffff;

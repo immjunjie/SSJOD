@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>3D Printer Logger</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
     <div class="container">
@@ -13,101 +13,68 @@
             <p>Status: <span class="active">Logging Active</span></p>
             <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
-
             <p>Status: <span class="inactive">Logging Stopped</span></p>
             <form action="{{ url_for('start') }}" method="post">
                 <h3>Select endpoints to monitor:</h3>
-
                 {% for endpoint in listOfEndpoints %}
-                    <div style="text-align:left;">
+                    <div class="endpoint-item" id="endpoints">
                         <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
                             {% if sequence[loop.index0] == '1' %}checked{% endif %}>
                         <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
                     </div>
                 {% endfor %}
-
                 <button type="submit" class="button start">Start Logging</button>
             </form>
         {% endif %}
 
         <div class="log-section">
             <h3>Live Logs</h3>
-            <div id="log-output">
-            </div>
+            <div id="log-output"></div>
             <button class="button clear" onclick="clearLogs()">Clear Logs</button>
         </div>
+        <div class="upload-section">
+            <h3>Settings</h3>
+            <div id="file-upload-box">Drag & drop files here, or click to upload (.gcode, .stl)</div>
+        <input type="file" id="file-input" multiple accept=".gcode,.stl">
 
-    </div>
-    <div id="file-upload-box">
-        Drag & drop files here, or click to upload (.gcode, .stl)
-    </div>
-    <input type="file" id="file-input" multiple accept=".gcode,.stl">
-    <br>
+        <form method="POST" action="/set-printer" class="printer-ip-form">
+            <label for="printer_ip">Printer IP:</label>
+            <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+            <button type="submit">Set Printer</button>
+        </form>
 
-    <form method="POST" action="/set-printer" class="printer-ip-form">
-        <label for="printer_ip">Printer IP:</label>
-        <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
-        <button type="submit">Set Printer</button>
-    </form>
-    {% if printer_ip %}
-        <p><strong>Current Printer:</strong> {{ printer_ip }}</p>
-    {% endif %}
-    {% if printer_error %}
-        <p style="color: red;"><strong>Error:</strong> {{ printer_error }}</p>
-    {% endif %}
-    <br>
-    <div id="uploaded-files" class="file-container">
-        {% if filenames %}
-            <strong>Uploaded Files:</strong>
-            <ul>
-            {% for filename in filenames %}
-                <li class="{% if filename.endswith('.gcode') %}gcode{% elif filename.endswith('.stl') %}stl{% endif %}">
-                    {{ filename }}
-                    <button class="delete-file" data-filename="{{ filename }}">clear</button>
-                </li>
-            {% endfor %}
-            </ul>
+        <div id="settings">
+        {% if printer_ip %}
+            <p><strong>Current Printer:</strong> {{ printer_ip }}</p>
         {% endif %}
+        {% if printer_error %}
+            <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
+        {% endif %}
+
+        <div id="uploaded-files" class="file-container">
+            {% if filenames %}
+                <strong>Uploaded Files:</strong>
+                <ul>
+                {% for filename in filenames %}
+                    <li class="{% if filename.endswith('.gcode') %}gcode{% elif filename.endswith('.stl') %}stl{% endif %}">
+                        {{ filename }}
+                        <button class="delete-file" data-filename="{{ filename }}">×</button>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        </div>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-    </div>
 
+    
 
-  
-
+    <!-- Load Socket.IO first -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        let logs = JSON.parse(localStorage.getItem("printerLogs") || "[]");
-
-        const logDiv = document.getElementById("log-output");
-
-        // On page load, restore old logs
-        logs.forEach(entry => {
-            const p = document.createElement("p");
-            p.innerText = entry;
-            logDiv.appendChild(p);
-        });
-
-        socket.on('new_log', function(data) {
-            const logEntry = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
-            logs.push(logEntry);
-            if (logs.length > 500) logs.shift(); // limit memory
-
-            localStorage.setItem("printerLogs", JSON.stringify(logs));
-
-            const p = document.createElement("p");
-            p.innerText = logEntry;
-            logDiv.appendChild(p);
-
-            logDiv.scrollTop = logDiv.scrollHeight; // auto-scroll
-        });
-
-        function clearLogs() {
-            logs = [];
-            localStorage.removeItem("printerLogs");
-            logDiv.innerHTML = "";  // clear the displayed logs
-}
-    </script>
+    <!-- Then main script -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
+
+
