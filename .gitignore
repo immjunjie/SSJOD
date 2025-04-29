@@ -19,3 +19,5 @@ backend/UI/__pycache__/logger.cpython-311.pyc
 .DS_Store
 /backend/UI/uploads
 /backend/UI/uploads/
+backend/UI/uploads
+/backend/UI/uploads
