@@ -24,6 +24,12 @@
                     </div>
                 {% endfor %}
                 <button type="submit" class="button start">Start Logging</button>
+                <label for="existing_file">Select log file:</label>
+                <select name="existing_file" id="existing_file">
+                    {% for file in existing_files %}
+                        <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+</select>
             </form>
         {% endif %}
 

@@ -40,7 +40,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Expose clearLogs globally
   window.clearLogs = () => {
     logs = [];
-    localStorage.removeItem('printerLogs');
+    localStorage.setItem('printerLogs', JSON.stringify([]));  // overwrite with empty array
     logDiv.innerHTML = '';
   };
 

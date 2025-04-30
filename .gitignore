@@ -3,7 +3,7 @@
 /backend/extractor/merged/extract_info.hdf5
 /3d_print_template
 /extract_info.hdf5
-/print_details.hdf5
+/print_details*
 /jumpOnLayerChange.hdf5
 venv
 /backend/UI/__pycache__
