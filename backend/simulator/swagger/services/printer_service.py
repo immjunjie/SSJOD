@@ -1,4 +1,4 @@
-from backend.simulator.swagger.generator.printer_data_gen import PrinterDataGenerator
+from backend.simulator.swagger.generator.print_job_gen import PrintJobDataGenerator
 
 
 class PrinterService:

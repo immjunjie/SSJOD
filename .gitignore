@@ -24,3 +24,4 @@ __pycache__/
 *..DS_Store
 .DS_Store
 services/.DS_Store
+/backend/UI/.DS_Store

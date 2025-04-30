@@ -1,8 +1,5 @@
+from backend.simulator.swagger.generator.authentication_gen import AuthDataGenerator
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends
-from backend.simulator.swagger.services.authentication_service import AuthDataGenerator
-
-router = APIRouter()
 
 class AuthResponse(BaseModel):
     message: str
@@ -16,17 +13,6 @@ class AuthService:
 
     def get_message_auth_verify(self) -> AuthResponse:
         return AuthResponse(message=self.printer_memory.get_message_auth_verify())
-
-def get_auth_service():
-    return AuthService()
-
-@router.get("/auth/check", tags=["Authentication"])
-def get_message_check_by_id(service: AuthService = Depends(get_auth_service)):
-    return service.get_message_check_by_id()
-
-@router.get("/auth/verify", tags=["Authentication"])
-def get_message_auth_verify(service: AuthService = Depends(get_auth_service)):
-    return service.get_message_auth_verify()
 
 
 if __name__ == "__main__":

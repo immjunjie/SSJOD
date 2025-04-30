@@ -41,7 +41,7 @@ class SwaggerAPI(BaseAPI):
     def register_routers(self):
         self.app.include_router(air_manager.router)
         self.app.include_router(ambient_temperature.router)
-        self.app.include_router(authentication.route)
+        self.app.include_router(authentication.router)
         self.app.include_router(camera.router)
         self.app.include_router(history.router)
         self.app.include_router(materials.router)
