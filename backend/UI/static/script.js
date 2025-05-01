@@ -75,6 +75,18 @@ window.addEventListener('DOMContentLoaded', () => {
               .then(loadUploadedFiles);
           });
         });
+
+        const changeBtn = document.getElementById('change-printer-btn');
+        const printerForm = document.getElementById('printer-form');
+        const currentPrinterWrapper = changeBtn ? changeBtn.parentElement : null;
+
+        if (changeBtn && printerForm && currentPrinterWrapper) {
+          changeBtn.addEventListener('click', () => {
+          printerForm.style.display = 'block';
+          currentPrinterWrapper.style.display = 'none';
+    });
+  }
+
       });
   }
 });

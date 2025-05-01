@@ -50,6 +50,22 @@ body {
     text-align: left;
 }
 
+/*printer config*/
+#printer-config button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #00aaff;
+    color: white;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#printer-config button:hover {
+    background-color: #0056b3;
+}
+
+
 /* File Upload Box*/
 #file-upload-box {
     border: 3px dashed #aaa;
@@ -171,9 +187,6 @@ body {
 .download-section {
     margin: 40px auto;
     max-width: 900px;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
     padding: 20px;
     text-align: center;
 }

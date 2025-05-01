@@ -42,20 +42,24 @@
             <h3>Settings</h3>
             <div id="file-upload-box">Drag & drop files here, or click to upload (.gcode, .stl)</div>
         <input type="file" id="file-input" multiple accept=".gcode,.stl">
-
-        <form method="POST" action="/set-printer" class="printer-ip-form">
-            <label for="printer_ip">Printer IP:</label>
-            <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
-            <button type="submit">Set Printer</button>
-        </form>
-
-        <div id="settings">
-        {% if printer_ip %}
-            <p><strong>Current Printer:</strong> {{ printer_ip }}</p>
-        {% endif %}
-        {% if printer_error %}
-            <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
-        {% endif %}
+        <br>
+        <div id="printer-config">
+            {% if printer_ip %}
+                <p><strong>Current Printer:</strong> <span id="current-printer">{{ printer_ip }}</span>
+                    <button type="button" id="change-printer-btn">Change</button>
+                </p>
+            {% endif %}
+        
+            <form method="POST" action="/set-printer" class="printer-ip-form" id="printer-form" {% if printer_ip %}style="display:none"{% endif %}>
+                <label for="printer_ip">Printer IP:</label>
+                <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+                <button type="submit">Set Printer</button>
+            </form>
+        
+            {% if printer_error %}
+                <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
+            {% endif %}
+        </div>
 
         <div id="uploaded-files" class="file-container">
             {% if filenames %}
