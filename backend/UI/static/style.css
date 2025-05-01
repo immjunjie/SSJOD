@@ -166,3 +166,52 @@ body {
 .clear {
     background-color: #6c757d;
 }
+
+/* Download section */
+.download-section {
+    margin: 40px auto;
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+.download-section label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.download-section select, .download-section input[type="text"] {
+    width: 60%;
+    padding: 10px;
+    margin-top: 5px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.download-section button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.download-section button:hover {
+    background-color: #0056b3;
+}
+
+.download-section p {
+    margin-top: 10px;
+    font-weight: bold;
+    color: red;
+}
