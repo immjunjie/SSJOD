@@ -71,6 +71,23 @@
             {% endif %}
         </div>
         </div>
+        <form action="/download" method="POST">
+            <label for="selected_file">Select existing HDF5 file:</label>
+            <select name="selected_file" id="selected_file" required>
+                {% for file in existing_files if file != 'New' %}
+                    <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+        
+            <label for="custom_name">Download as:</label>
+            <input type="text" id="custom_name" name="custom_name" placeholder="my_print_data.hdf5" required>
+        
+            <button type="submit">Download HDF5</button>
+        
+            {% if downloadBoxError %}
+                <p style="color: red; font-weight: bold;">{{ downloadBoxError }}</p>
+            {% endif %}
+        </form>
         </div>
     </div>
 

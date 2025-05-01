@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, session
+from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file
 from flask_socketio import SocketIO
 import threading
 import logger
 from filter_endpoints import filterMask
 import requests
 import os
+import re
 
 listOfEndpoints = [
     "Head Position",
@@ -182,6 +183,33 @@ def delete_file(filename):
             os.remove(file_path)
     session['uploaded_paths'] = uploaded_paths
     return jsonify(success=True)
+
+@app.route('/download', methods=['POST'])
+def download_hdf5():
+    selected_file = request.form.get("selected_file", "").strip()
+    custom_name = request.form.get("custom_name", "").strip()
+
+    if not selected_file or not custom_name:
+        return render_template("index.html", downloadBoxError="Please select a file and enter a name.")
+
+    selected_file = re.sub(r'[^\w\-_.]', '_', selected_file)
+    custom_name = re.sub(r'[^\w\-_.]', '_', custom_name)
+
+    if not custom_name.endswith(".hdf5"):
+        custom_name += ".hdf5"
+
+    hdf5_path = os.path.abspath(os.path.join(DETAILS_FOLDER, selected_file))
+
+    if not os.path.exists(hdf5_path):
+        return render_template("index.html", downloadBoxError="Selected HDF5 file does not exist.")
+
+    return send_file(
+        hdf5_path,
+        as_attachment=True,
+        download_name=custom_name,
+        mimetype='application/octet-stream',
+        max_age=0
+    )
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
