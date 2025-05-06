@@ -3,7 +3,7 @@
 /backend/extractor/merged/extract_info.hdf5
 /3d_print_template
 /extract_info.hdf5
-/print_details*
+/print_details.hdf5
 /jumpOnLayerChange.hdf5
 venv
 /backend/UI/__pycache__
@@ -15,9 +15,8 @@ backend/UI/__pycache__
 backend/UI/__pycache__/logger.cpython-311.pyc
 /backend/UI/__pycache__/logger.cpython-311.pyc
 /backend/UI/__pycache__
-/uploads/
-.DS_Store
-/backend/UI/uploads
-/backend/UI/uploads/
-backend/UI/uploads
-/backend/UI/uploads
+backend/UI/__pycache__/logger.cpython-311.pyc
+UI/test.py
+logger.cpython-311.pyc
+__pycache__
+
