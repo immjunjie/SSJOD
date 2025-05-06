@@ -155,7 +155,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.9em;
+    font-size: 0.8em;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     padding: 8px;
@@ -168,7 +168,6 @@ body {
 }
 
 .endpoint-item label {
-    margin-left: 5px;
     white-space: nowrap; /* Prevent label text from breaking into new lines */
 }
 
@@ -180,6 +179,7 @@ body {
 .endpoint-item input:checked + label {
     color: #0056b3; /* Highlight label when checkbox is checked */
 }
+
 /* Hidden Utility Class */
 .hidden {
     display: none !important;
