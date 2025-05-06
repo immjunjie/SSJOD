@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
     logDiv.innerHTML = '';
   };
 
-  
+
   function handleFiles(files) {
     const formData = new FormData();
     for (const file of files) formData.append(file.name, file);
@@ -56,37 +56,56 @@ window.addEventListener('DOMContentLoaded', () => {
 
   function loadUploadedFiles() {
     fetch('/uploaded-files')
-      .then(res => res.json())
-      .then(data => {
-        if (!uploadedFiles) return;
-        if (!data.files.length) { uploadedFiles.innerHTML = ''; return; }
+        .then(res => res.json())
+        .then(data => {
+            if (!uploadedFiles) return;
 
-        let html = '<strong>Uploaded Files:</strong><ul>';
-        data.files.forEach(fname => {
-          const cls = fname.endsWith('.gcode') ? 'gcode' : fname.endsWith('.stl') ? 'stl' : '';
-          html += `<li class="${cls}">${fname} <button class="delete-file" data-filename="${fname}">×</button></li>`;
+            // Start the new layout
+            let html = '<strong>Uploaded Files:</strong><ul>';
+
+            // Track presence
+            let hasGcode = false;
+            let hasStl = false;
+
+            // Process uploaded files
+            data.files.forEach(fname => {
+                const cls = fname.endsWith('.gcode') ? 'gcode' : fname.endsWith('.stl') ? 'stl' : '';
+                if (cls === 'gcode') hasGcode = true;
+                if (cls === 'stl') hasStl = true;
+
+                html += `<li class="${cls}">${fname} <button class="delete-file" data-filename="${fname}">×</button></li>`;
+            });
+
+            // Add empty slots if missing
+            if (!hasGcode) {
+                html += `<li class="gcode placeholder">G-code file required.</li>`;
+            }
+            if (!hasStl) {
+                html += `<li class="stl placeholder">STL file required.</li>`;
+            }
+
+            html += '</ul>';
+            uploadedFiles.innerHTML = html;
+
+            // Delete buttons
+            document.querySelectorAll('.delete-file').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    fetch(`/delete-file/${encodeURIComponent(btn.dataset.filename)}`, { method: 'POST' })
+                        .then(loadUploadedFiles);
+                });
+            });
+
+            // Change printer button handling
+            const changeBtn = document.getElementById('change-printer-btn');
+            const printerForm = document.getElementById('printer-form');
+            const currentPrinterWrapper = changeBtn ? changeBtn.parentElement : null;
+
+            if (changeBtn && printerForm && currentPrinterWrapper) {
+                changeBtn.addEventListener('click', () => {
+                    printerForm.style.display = 'block';
+                    currentPrinterWrapper.style.display = 'none';
+                });
+            }
         });
-        html += '</ul>';
-        uploadedFiles.innerHTML = html;
-
-        document.querySelectorAll('.delete-file').forEach(btn => {
-          btn.addEventListener('click', () => {
-            fetch(`/delete-file/${encodeURIComponent(btn.dataset.filename)}`, { method: 'POST' })
-              .then(loadUploadedFiles);
-          });
-        });
-
-        const changeBtn = document.getElementById('change-printer-btn');
-        const printerForm = document.getElementById('printer-form');
-        const currentPrinterWrapper = changeBtn ? changeBtn.parentElement : null;
-
-        if (changeBtn && printerForm && currentPrinterWrapper) {
-          changeBtn.addEventListener('click', () => {
-          printerForm.style.display = 'block';
-          currentPrinterWrapper.style.display = 'none';
-    });
-  }
-
-      });
-  }
+}
 });

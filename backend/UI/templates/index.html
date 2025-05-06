@@ -62,17 +62,33 @@
         </div>
 
         <div id="uploaded-files" class="file-container">
-            {% if filenames %}
-                <strong>Uploaded Files:</strong>
-                <ul>
-                {% for filename in filenames %}
-                    <li class="{% if filename.endswith('.gcode') %}gcode{% elif filename.endswith('.stl') %}stl{% endif %}">
-                        {{ filename }}
-                        <button class="delete-file" data-filename="{{ filename }}">×</button>
-                    </li>
-                {% endfor %}
-                </ul>
-            {% endif %}
+            <strong>Uploaded Files:</strong>
+            <div class="file-slot" id="gcode-slot">
+                <h4>G-code File</h4>
+                {% if filenames %}
+                    {% for filename in filenames %}
+                        {% if filename.endswith('.gcode') %}
+                            <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if not filenames or not filenames|selectattr('endswith', '.gcode') %}
+                    <p><i>No G-code file uploaded yet. Please upload one.</i></p>
+                {% endif %}
+            </div>
+            <div class="file-slot" id="stl-slot">
+                <h4>STL File</h4>
+                {% if filenames %}
+                    {% for filename in filenames %}
+                        {% if filename.endswith('.stl') %}
+                            <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if not filenames or not filenames|selectattr('endswith', '.stl') %}
+                    <p><i>No STL file uploaded yet. Please upload one.</i></p>
+                {% endif %}
+            </div>
         </div>
         </div>
         <div class="download-section">
