@@ -88,6 +88,7 @@ async def root_redirect():
 if __name__ == "__main__":
     import uvicorn
 
+
     uvicorn.run(
         "backend.simulator.main:app",
         host="127.0.0.1",
