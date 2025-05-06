@@ -14,32 +14,16 @@
             <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
             <p>Status: <span class="inactive">Logging Stopped</span></p>
-            <form action="{{ url_for('start') }}" method="post">
-                <h3>Select endpoints to monitor:</h3>
-                {% for endpoint in listOfEndpoints %}
-                    <div class="endpoint-item" id="endpoints">
-                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
-                            {% if sequence[loop.index0] == '1' %}checked{% endif %}>
-                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
-                    </div>
-                {% endfor %}
-                <button type="submit" class="button start">Start Logging</button>
-                <label for="existing_file">Select log file:</label>
-                <select name="existing_file" id="existing_file">
-                    {% for file in existing_files %}
-                        <option value="{{ file }}">{{ file }}</option>
-                    {% endfor %}
-</select>
-            </form>
         {% endif %}
-
         <div class="log-section">
             <h3>Live Logs</h3>
             <div id="log-output"></div>
             <button class="button clear" onclick="clearLogs()">Clear Logs</button>
         </div>
+
+
         <div class="upload-section">
-            <h3>Settings</h3>
+            <h3>Setup</h3>
             <div id="file-upload-box">Drag & drop files here, or click to upload (.gcode, .stl)</div>
         <input type="file" id="file-input" multiple accept=".gcode,.stl">
         <br>
@@ -90,7 +74,27 @@
                 {% endif %}
             </div>
         </div>
+        <form action="{{ url_for('start') }}" method="post">
+            <h3>Tracked Printer Stats:</h3>
+            <div class="endpoints-container">
+                {% for endpoint in listOfEndpoints %}
+                    <div class="endpoint-item"  id="endpoints">
+                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
+                            {% if sequence[loop.index0] == '1' %}checked{% endif %}>
+                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="button start">Start Logging</button>
+            <label for="existing_file">Select log file:</label>
+            <select name="existing_file" id="existing_file">
+                {% for file in existing_files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+        </form>
         </div>
+
         <div class="download-section">
             <form action="/download" method="POST">
                 <label for="selected_file">Select existing HDF5 file:</label>
