@@ -1,4 +1,3 @@
-# extract_snapshots.py
 import requests
 import h5py
 import numpy as np

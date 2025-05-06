@@ -5,14 +5,15 @@ import numpy as np
 from datetime import datetime
 import concurrent.futures
 from filter_endpoints import filterMask
+from extract_snapshots import PrinterSnapshotter
 
 
 # Global control variable
 running = False
 
 # Organized endpoints: priority order (position, temperature, status, others)
-def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path):
-    run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio)
+def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, camera_url=None):
+    run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio, camera_url)
 
 def query(base_url, name, path):
     """the call function for the printer api. runs for each call"""
@@ -76,7 +77,7 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio):
+def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio, camera_url=None):
     """Main logger: fetches printer data, stores it in structured HDF5 file."""
 
     global running
@@ -87,7 +88,13 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
 
     layer = 0       # int variable for layer number
     scannum = 0     # int variable for scan number
-    last_z = 0.0    # the position_z of the previous scan. on each scan, the new z is compared to this to detect if theres a change in layer 
+    last_z = 0.0    # the position_z of the previous scan. on each scan, the new z is compared to this to detect if theres a change in layer
+
+    # Initialize snapshotter if camera URL is provided
+    snapshotter = None
+    if camera_url:
+        snapshotter = PrinterSnapshotter(camera_url, hdf5_filename)
+        print(f"Snapshotter initialized with camera URL: {camera_url}")
 
     layer_height = extractLayerHeightgcode(gcode_path)  #gets the layer height from the gcode
     if not layer_height:

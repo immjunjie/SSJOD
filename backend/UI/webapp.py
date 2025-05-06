@@ -37,7 +37,7 @@ DETAILS_FOLDER = 'Print_details_folder'
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 
 
-def start_logging(sequence, uploaded_paths, printer_ip, use_same_file, selected_filename):
+def start_logging(sequence, uploaded_paths, printer_ip, use_same_file, selected_filename, camera_url=None):
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
 
@@ -70,6 +70,7 @@ def start_logging(sequence, uploaded_paths, printer_ip, use_same_file, selected_
         socketio=socketio,
         hdf5_filename=hdf5_filename,
         base_url=test_url,
+        camera_url=f'http://{printer_ip}/api/v1/camera/0/snapshot',
         interval_time=0.0001,
         endpoints=filterMask(sequence),
         sequence=sequence,
@@ -82,6 +83,7 @@ def index():
     filenames = list(session.get('uploaded_paths', {}).keys())
     use_same_file = session.get('use_same_file', False)
     printer_ip = session.get('printer_ip')
+    camera_url = session.get('camera_url')
     printer_error = session.pop('printer_error', '')
     
     existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5'))
@@ -91,6 +93,7 @@ def index():
                         logging=is_logging, 
                         filenames=filenames, 
                         printer_ip=printer_ip,
+                        camera_url=camera_url,
                         printer_error=printer_error, 
                         listOfEndpoints=listOfEndpoints, 
                         sequence=current_sequence, 
@@ -101,12 +104,21 @@ def index():
 @app.route("/set-printer", methods=["POST"])
 def set_printer():
     ip = request.form.get('printer_ip')
+    camera_url = request.form.get('camera_url')
+
     if ip:
         try:
             resp = requests.get(f"http://{ip}/docs/printer", timeout=2)
             if resp.status_code == 200:
                 session['printer_ip'] = ip
                 session['printer_error'] = ''
+
+                #Store camera URL
+                if camera_url:
+                    session['camera_url'] = camera_url
+                else:
+                    #Remove camera_url from session if field is empty
+                    session.pop('camera_url', None)
             else:
                 session['printer_error'] = "Printer did not respond correctly."
         except requests.RequestException:
@@ -117,6 +129,7 @@ def set_printer():
 def start():
     global log_thread, is_logging, current_sequence
     uploaded_paths = session.get('uploaded_paths', {})
+    camera_url = session.get('camera_url')
 
     use_same_file = 'same_file' in request.form  # still preserved if needed
     session['use_same_file'] = use_same_file
@@ -136,7 +149,7 @@ def start():
         printer_ip = session.get('printer_ip')
         log_thread = threading.Thread(
             target=start_logging,
-            args=(sequence, uploaded_paths, printer_ip, use_same_file, selected_filename)
+            args=(sequence, uploaded_paths, printer_ip, camera_url, use_same_file, selected_filename)
         )
         log_thread.start()
         is_logging = True
