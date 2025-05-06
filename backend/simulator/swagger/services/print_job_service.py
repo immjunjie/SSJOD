@@ -1,4 +1,4 @@
-from backend.simulator.swagger.generator.print_job_gen import PrintJobDataGenerator
+from backend.simulator.swagger.generators.print_job_gen import PrintJobDataGenerator
 from typing import Dict, Any
 
 
