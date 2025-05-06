@@ -4,24 +4,20 @@ import time  # Timing loops
 import numpy as np  # Numerical arrays
 from datetime import datetime  # Timestamps
 import concurrent.futures  # Thread pool for parallel queries
-from filter_endpoints import filterMask  # Endpoint filtering
 
 # Global control flag for the logger loop
 running = False
 
 
-# Helper to query a single endpoint
 def query(base_url, name, path):
-    """the call function for the printer api. runs for each call"""
     try:
         response = requests.get(base_url + path, timeout=2)
         return name, response.json()
     except Exception as e:
         return name, {"error": str(e)}
 
-# Normalize values to float for storage
+
 def convert_to_float(val):
-    """used to convert the numerical outputs from the printer calls to floats"""
     if isinstance(val, dict):
         for key in ["current", "value"]:
             if key in val:
@@ -35,9 +31,8 @@ def convert_to_float(val):
     except:
         return 0.0
 
-# Parse G-code comments to estimate layer height
+
 def extractLayerHeightgcode(gcode_path):
-    """Extracts layer height from G-code file comments."""
     layer_count, min_z, max_z = None, None, None
     try:
         with open(gcode_path, "r", encoding="utf-8", errors="ignore") as file:
@@ -51,39 +46,38 @@ def extractLayerHeightgcode(gcode_path):
                 if layer_count and min_z is not None and max_z is not None:
                     break
         if layer_count is not None and min_z is not None and max_z is not None:
-            # Calculate consistent layer height from range / (count-1)
             return round((max_z - min_z) / (layer_count - 1), 4)
     except Exception as e:
         print(f"Failed to extract layer height: {e}")
     return None
 
-# Embed binary files into HDF5 with metadata
+
 def store_file_with_metadata(h5_group, file_path, dataset_name, description):
-    """Stores a binary file in an HDF5 group with metadata. used for the stl and gcode preprint files"""
     with open(file_path, "rb") as f:
         data = f.read()
         dset = h5_group.create_dataset(dataset_name, data=np.void(data))
         dset.attrs["filesize_bytes"] = len(data)
         dset.attrs["description"] = description
 
-# Signal loop to stop
+
 def stop_logger():
     global running
     running = False
 
-# Main logging loop: parallel queries, HDF5 writes, and socket emits
-def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path):
+
+def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path, max_duration=None):
     global running
     if running:
         print("Logger is already running.")
         return
     running = True
 
-    layer = 0       # int variable for layer number
-    scannum = 0     # int variable for scan number
-    last_z = 0.0    # the position_z of the previous scan. on each scan, the new z is compared to this to detect if theres a change in layer 
+    start_time = time.time()
+    layer = 0
+    scannum = 0
+    last_z = 0.0
 
-    layer_height = extractLayerHeightgcode(gcode_path)  #gets the layer height from the gcode
+    layer_height = extractLayerHeightgcode(gcode_path)
     if not layer_height:
         print("Layer height could not be determined.")
         return
@@ -91,7 +85,6 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
     print("Logging started. Press Ctrl+C to stop.")
 
     with h5py.File(hdf5_filename, "w") as f:
-        # Store preprint metadata: STL and G-code files
         preprint_grp = f.create_group('preprint')
         stl_grp = preprint_grp.create_group('STL')
         gcode_grp = preprint_grp.create_group('Gcode')
@@ -99,69 +92,62 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
         store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", "STL file in binary")
         store_file_with_metadata(gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", "G-code file in binary")
 
-        # Also store full G-code text for debugging
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
             gcode_grp.create_dataset("full_text", data=gcode_str)
 
-        #attributes for preprint.
         preprint_grp.attrs['layer_height'] = layer_height
         preprint_grp.attrs['resolution'] = 'Ultimaker'
 
-        # Prepare screenshot group and layer storage
         screenshots_grp = f.create_group('Screenshots')
         screenshots_grp.attrs['format'] = 'JPEG'
         screenshots_grp.attrs['count'] = 0
 
-        #layers structure. creates an empty 'layer 0000' first. could be changed later idk.
         layers_grp = f.create_group('layers')
         layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
 
-        #looping through the printer api calls with threading.
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
 
         try:
-            # the main scan loop. runs on repeat until scanning is stopped. 
             while running:
+                # timer check
+                if max_duration and (time.time() - start_time) >= max_duration:
+                    print(f"Max duration of {max_duration} seconds reached. Stopping logger.")
+                    running = False
+                    break
                 scannum += 1
-
-                # Query all enabled endpoints concurrently
                 futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
-                results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
+                results = {f.result()[0]: f.result()[1] for f in concurrent.futures.as_completed(futures)}
                 timestamp = datetime.now().isoformat()
 
-                # Compute current head Z and detect layer changes
                 try:
-                    pos = results["head_pos"]
-                    position_xyz = np.array([float(pos["x"]), float(pos["y"]), float(pos["z"])])
-                except Exception:
+                    pos = results.get("head_pos", {})
+                    position_xyz = np.array([float(pos.get("x", 0)), float(pos.get("y", 0)), float(pos.get("z", 0))])
+                except:
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
-                # Layer tracking. changes layer if the position_z changes by the layer height. give or take 0.05mm. 
                 current_z = position_xyz[2]
-                if (current_z >= last_z + (layer_height - 0.05) and current_z <= last_z + (layer_height + 0.05)) or last_z == 0:
+                if (last_z == 0) or (abs(current_z - last_z - layer_height) <= 0.05):
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
                     layer_grp.attrs['timestamp'] = timestamp
                     last_z = current_z
                     print('Layer changed:', layer)
 
-                # creates the folder for this 'scan' that the data would be stored in. 
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
 
-                # stores the data. the if statement checks if the box on the webpage was ticked for that data. 
                 if sequence[0] == '1':
                     scan_grp.create_dataset("position", data=position_xyz)
                 if sequence[1] == '1':
-                    bed_info = results["bed_temp"]
+                    bed_info = results.get("bed_temp", {})
                     scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
                     scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
                     scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
                 if sequence[2] == '1':
-                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"]))
+                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results.get("nozzle_temp_current", 0)))
                 if sequence[3] == '1':
-                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"]))
+                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results.get("nozzle_temp_target", 0)))
                 if sequence[4] == '1':
                     scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0)))
                 if sequence[5] == '1':
@@ -179,19 +165,10 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                 if sequence[11] == '1':
                     scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0)))
 
-
-                # Always store timestamp and emit via WebSocket
                 scan_grp.attrs['timestamp'] = timestamp
                 if socketio:
-                    log_entry = {
-                        'scan': scannum,
-                        'layer': layer,
-                        'position_z': round(current_z, 2),
-                        'timestamp': timestamp,
-                    }
-                    socketio.emit('new_log', log_entry)
+                    socketio.emit('new_log', {'scan': scannum, 'layer': layer, 'position_z': round(current_z, 2), 'timestamp': timestamp})
 
-                # Loop timing control can be added here (commented out)
         except KeyboardInterrupt:
             print("Logging stopped.")
 
