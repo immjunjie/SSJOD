@@ -33,13 +33,13 @@
                     <button type="button" id="change-printer-btn">Change</button>
                 </p>
             {% endif %}
-        
+
             <form method="POST" action="/set-printer" class="printer-ip-form" id="printer-form" {% if printer_ip %}style="display:none"{% endif %}>
                 <label for="printer_ip">Printer IP:</label>
                 <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
                 <button type="submit">Set Printer</button>
             </form>
-        
+
             {% if printer_error %}
                 <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
             {% endif %}
@@ -103,12 +103,12 @@
                         <option value="{{ file }}">{{ file }}</option>
                     {% endfor %}
                 </select>
-        
+
                 <label for="custom_name">Download as:</label>
                 <input type="text" id="custom_name" name="custom_name" placeholder="my_print_data.hdf5" required>
-        
+
                 <button type="submit">Download HDF5</button>
-        
+
                 {% if downloadBoxError %}
                     <p>{{ downloadBoxError }}</p>
                 {% endif %}

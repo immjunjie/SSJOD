@@ -33,8 +33,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const p = document.createElement('p');
     p.innerText = logEntry;
+    const isAtBottom = logDiv.scrollHeight - logDiv.scrollTop <= logDiv.clientHeight + 5;
     logDiv.appendChild(p);
-    logDiv.scrollTop = logDiv.scrollHeight;
+    if (isAtBottom) {
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
   });
 
   // Expose clearLogs globally

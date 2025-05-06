@@ -1,18 +1,13 @@
-import requests
-import h5py
-import time
-import numpy as np
-from datetime import datetime
-import concurrent.futures
-from filter_endpoints import filterMask
+import requests  # HTTP client
+import h5py  # HDF5 file handling
+import time  # Timing loops
+import numpy as np  # Numerical arrays
+from datetime import datetime  # Timestamps
+import concurrent.futures  # Thread pool for parallel queries
 
-
-# Global control variable
+# Global control flag for the logger loop
 running = False
 
-# Organized endpoints: priority order (position, temperature, status, others)
-def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path):
-    run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio)
 
 def query(base_url, name, path):
     try:
@@ -38,9 +33,7 @@ def convert_to_float(val):
 
 
 def extractLayerHeightgcode(gcode_path):
-    """Extracts estimated layer height from G-code file comments."""
     layer_count, min_z, max_z = None, None, None
-    print(gcode_path)
     try:
         with open(gcode_path, "r", encoding="utf-8", errors="ignore") as file:
             for line in file:
@@ -52,7 +45,6 @@ def extractLayerHeightgcode(gcode_path):
                     max_z = float(line.strip().split(":")[1])
                 if layer_count and min_z is not None and max_z is not None:
                     break
-
         if layer_count is not None and min_z is not None and max_z is not None:
             return round((max_z - min_z) / (layer_count - 1), 4)
     except Exception as e:
@@ -61,7 +53,6 @@ def extractLayerHeightgcode(gcode_path):
 
 
 def store_file_with_metadata(h5_group, file_path, dataset_name, description):
-    """Stores a binary file in an HDF5 group with metadata."""
     with open(file_path, "rb") as f:
         data = f.read()
         dset = h5_group.create_dataset(dataset_name, data=np.void(data))
@@ -74,15 +65,14 @@ def stop_logger():
     running = False
 
 
-def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio):
-    """Main logger: fetches printer data, stores it in structured HDF5 file."""
-
+def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path, max_duration=None):
     global running
     if running:
         print("Logger is already running.")
         return
     running = True
 
+    start_time = time.time()
     layer = 0
     scannum = 0
     last_z = 0.0
@@ -95,12 +85,10 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
     print("Logging started. Press Ctrl+C to stop.")
 
     with h5py.File(hdf5_filename, "w") as f:
-        # Preprint metadata section
         preprint_grp = f.create_group('preprint')
         stl_grp = preprint_grp.create_group('STL')
         gcode_grp = preprint_grp.create_group('Gcode')
 
-        # Store binary files and raw G-code text
         store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", "STL file in binary")
         store_file_with_metadata(gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", "G-code file in binary")
 
@@ -111,7 +99,6 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
         preprint_grp.attrs['layer_height'] = layer_height
         preprint_grp.attrs['resolution'] = 'Ultimaker'
 
-        # Screenshot metadata
         screenshots_grp = f.create_group('Screenshots')
         screenshots_grp.attrs['format'] = 'JPEG'
         screenshots_grp.attrs['count'] = 0
@@ -123,24 +110,24 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
 
         try:
             while running:
+                # timer check
+                if max_duration and (time.time() - start_time) >= max_duration:
+                    print(f"Max duration of {max_duration} seconds reached. Stopping logger.")
+                    running = False
+                    break
                 scannum += 1
-                start_time = time.perf_counter()
-
-                # Query all endpoints in parallel
                 futures = [executor.submit(query, base_url, name, path) for name, path in endpoints.items()]
-                results = {future.result()[0]: future.result()[1] for future in concurrent.futures.as_completed(futures)}
+                results = {f.result()[0]: f.result()[1] for f in concurrent.futures.as_completed(futures)}
                 timestamp = datetime.now().isoformat()
 
-                # Position
                 try:
-                    pos = results["head_pos"]
-                    position_xyz = np.array([float(pos["x"]), float(pos["y"]), float(pos["z"])])
-                except Exception:
+                    pos = results.get("head_pos", {})
+                    position_xyz = np.array([float(pos.get("x", 0)), float(pos.get("y", 0)), float(pos.get("z", 0))])
+                except:
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
-                # Layer tracking
                 current_z = position_xyz[2]
-                if (current_z >= last_z + (layer_height - 0.05)) and (current_z <= last_z + (layer_height + 0.05)) or last_z == 0:
+                if (last_z == 0) or (abs(current_z - last_z - layer_height) <= 0.05):
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
                     layer_grp.attrs['timestamp'] = timestamp
@@ -150,18 +137,17 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
 
-                # === STORE DATA ===
                 if sequence[0] == '1':
                     scan_grp.create_dataset("position", data=position_xyz)
                 if sequence[1] == '1':
-                    bed_info = results["bed_temp"]
+                    bed_info = results.get("bed_temp", {})
                     scan_grp.create_dataset("bed_current_temp", data=convert_to_float(bed_info.get("current", 0)))
                     scan_grp.create_dataset("bed_target_temp", data=convert_to_float(bed_info.get("target", 0)))
                     scan_grp.create_dataset("bed_type", data=bed_info.get("type", "unknown"), dtype=dt)
                 if sequence[2] == '1':
-                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results["nozzle_temp_current"]))
+                    scan_grp.create_dataset("current_nozzle_temp", data=convert_to_float(results.get("nozzle_temp_current", 0)))
                 if sequence[3] == '1':
-                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results["nozzle_temp_target"]))
+                    scan_grp.create_dataset("target_nozzle_temp", data=convert_to_float(results.get("nozzle_temp_target", 0)))
                 if sequence[4] == '1':
                     scan_grp.create_dataset("time_spent_hot", data=convert_to_float(results.get("time_spent_hot", 0)))
                 if sequence[5] == '1':
@@ -179,34 +165,13 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
                 if sequence[11] == '1':
                     scan_grp.create_dataset("max_speed", data=convert_to_float(results.get("max_speed", 0)))
 
-                # === TIMESTAMP ===
                 scan_grp.attrs['timestamp'] = timestamp
-
-                # === EMIT VIA SOCKET ===
                 if socketio:
-                    log_entry = {
-                        'scan': scannum,
-                        'layer': layer,
-                        'position_z': round(current_z, 2),
-                        'timestamp': timestamp,
-                    }
-                    socketio.emit('new_log', log_entry)
-
-                # Handle timing and wait interval
-                elapsed = time.perf_counter() - start_time
-                #sleep_time = max(0, interval_time - elapsed)
-                #time.sleep(sleep_time)
+                    socketio.emit('new_log', {'scan': scannum, 'layer': layer, 'position_z': round(current_z, 2), 'timestamp': timestamp})
 
         except KeyboardInterrupt:
             print("Logging stopped.")
 
 
-if __name__ == "__main__":
-    run_logger(
-        hdf5_filename='print_details.hdf5',
-        base_url='http://143.239.73.224/api/v1/printer',
-        interval_time=0.01,
-        sequence = filterMask("111111111111"),
-        stl_path = 'uploads/_3DBenchy.stl',
-        gcode_path = 'uploads/UMS5__3DBenchy.gcode'
-    )
+
+
