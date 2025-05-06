@@ -15,8 +15,10 @@ backend/UI/__pycache__
 backend/UI/__pycache__/logger.cpython-311.pyc
 /backend/UI/__pycache__/logger.cpython-311.pyc
 /backend/UI/__pycache__
-backend/UI/__pycache__/logger.cpython-311.pyc
-UI/test.py
-logger.cpython-311.pyc
-__pycache__
-
+/uploads/
+.DS_Store
+/backend/UI/uploads
+/backend/UI/uploads/
+backend/UI/uploads
+/backend/UI/uploads
+/Print_details_folder/
