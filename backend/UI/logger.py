@@ -161,6 +161,11 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
                     last_z = current_z
                     print('Layer changed:', layer)
 
+                    # Capture snapshot for this layer if snapshotter is initialized
+                    if snapshotter and layer > 0:  # Skip layer 0
+                        print(f"Capturing snapshot for layer {layer}")
+                        snapshotter.capture_layer_snapshot(layer)
+
                 # creates the folder for this 'scan' that the data would be stored in. 
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
