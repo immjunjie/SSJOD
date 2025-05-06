@@ -15,6 +15,7 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, interval_time, end
     run_logger( hdf5_filename, base_url, interval_time, endpoints, sequence, stl_path, gcode_path, socketio)
 
 def query(base_url, name, path):
+    """the call function for the printer api. runs for each call"""
     try:
         response = requests.get(base_url + path, timeout=2)
         return name, response.json()
@@ -23,6 +24,7 @@ def query(base_url, name, path):
 
 
 def convert_to_float(val):
+    """used to convert the numerical outputs from the printer calls to floats"""
     if isinstance(val, dict):
         for key in ["current", "value"]:
             if key in val:
@@ -38,7 +40,7 @@ def convert_to_float(val):
 
 
 def extractLayerHeightgcode(gcode_path):
-    """Extracts estimated layer height from G-code file comments."""
+    """Extracts layer height from G-code file comments."""
     layer_count, min_z, max_z = None, None, None
     print(gcode_path)
     try:
@@ -61,7 +63,7 @@ def extractLayerHeightgcode(gcode_path):
 
 
 def store_file_with_metadata(h5_group, file_path, dataset_name, description):
-    """Stores a binary file in an HDF5 group with metadata."""
+    """Stores a binary file in an HDF5 group with metadata. used for the stl and gcode preprint files"""
     with open(file_path, "rb") as f:
         data = f.read()
         dset = h5_group.create_dataset(dataset_name, data=np.void(data))
@@ -83,11 +85,11 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
         return
     running = True
 
-    layer = 0
-    scannum = 0
-    last_z = 0.0
+    layer = 0       # int variable for layer number
+    scannum = 0     # int variable for scan number
+    last_z = 0.0    # the position_z of the previous scan. on each scan, the new z is compared to this to detect if theres a change in layer 
 
-    layer_height = extractLayerHeightgcode(gcode_path)
+    layer_height = extractLayerHeightgcode(gcode_path)  #gets the layer height from the gcode
     if not layer_height:
         print("Layer height could not be determined.")
         return
@@ -104,10 +106,12 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
         store_file_with_metadata(stl_grp, stl_path, "_3DBenchy.stl", "STL file in binary")
         store_file_with_metadata(gcode_grp, gcode_path, "UMS5_3DBenchy.gcode", "G-code file in binary")
 
+        #gcode file as readable string
         with open(gcode_path, "r") as gcode_file:
             gcode_str = gcode_file.read()
             gcode_grp.create_dataset("full_text", data=gcode_str)
 
+        #attributes for preprint.
         preprint_grp.attrs['layer_height'] = layer_height
         preprint_grp.attrs['resolution'] = 'Ultimaker'
 
@@ -116,12 +120,15 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
         screenshots_grp.attrs['format'] = 'JPEG'
         screenshots_grp.attrs['count'] = 0
 
+        #layers structure. creates an empty 'layer 0000' first. could be changed later idk.
         layers_grp = f.create_group('layers')
         layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
 
+        #looping through the printer api calls with threading.
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
 
         try:
+            # the main scan loop. runs on repeat until scanning is stopped. 
             while running:
                 scannum += 1
                 start_time = time.perf_counter()
@@ -138,7 +145,7 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
                 except Exception:
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
-                # Layer tracking
+                # Layer tracking. changes layer if the position_z changes by the layer height. give or take 0.05mm. 
                 current_z = position_xyz[2]
                 if (current_z >= last_z + (layer_height - 0.05)) and (current_z <= last_z + (layer_height + 0.05)) or last_z == 0:
                     layer += 1
@@ -147,10 +154,11 @@ def run_logger(hdf5_filename, base_url, interval_time, endpoints, sequence, stl_
                     last_z = current_z
                     print('Layer changed:', layer)
 
+                # creates the folder for this 'scan' that the data would be stored in. 
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
                 dt = h5py.string_dtype(encoding='utf-8')
 
-                # === STORE DATA ===
+                # stores the data. the if statement checks if the box on the webpage was ticked for that data. 
                 if sequence[0] == '1':
                     scan_grp.create_dataset("position", data=position_xyz)
                 if sequence[1] == '1':
