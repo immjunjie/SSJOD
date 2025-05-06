@@ -25,17 +25,17 @@
                 {% endfor %}
                 <button type="submit" class="button start">Start Logging</button>
                 <label for="existing_file">Select log file:</label>
-<select name="existing_file" id="existing_file">
-  {% for file in existing_files %}
-    <option
-      value="{{ file }}"
-      {% if file == selected_file %}selected{% endif %}>
-      {{ file }}
-    </option>
-  {% endfor %}
-</select>
-            </form>
-        {% endif %}
+                <select name="existing_file" id="existing_file">
+                {% for file in existing_files %}
+                    <option
+                    value="{{ file }}"
+                    {% if file == selected_file %}selected{% endif %}>
+                    {{ file }}
+                    </option>
+                {% endfor %}
+                </select>
+                </form>
+                {% endif %}
 
         <div class="log-section">
             <h3>Live Logs</h3>
