@@ -28,7 +28,7 @@ class PrinterSnapshotter:
             bytes: upload raw image data if successful, None otherwise
         """
         try:
-            response = requests.get(self.camera_url, timeout=10)
+            response = requests.get(self.camera_url, timeout=1.3)
             if response.status_code == 200:
                 return response.content
             else:
