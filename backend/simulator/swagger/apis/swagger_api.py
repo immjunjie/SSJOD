@@ -1,12 +1,15 @@
+from fastapi import APIRouter, FastAPI
 from backend.simulator.base.apis.base_api import BaseAPI
 from backend.simulator.swagger.apis.endpoints import (
     air_manager, ambient_temperature, camera, network, printer, system, authentication, materials, print_job, history
 )
+import logging
 
+logger = logging.getLogger(__name__)
 
 class SwaggerAPI(BaseAPI):
     """Swagger API Implementation"""
-    def __init__(self):
+    def __init__(self, docs_url=None, redoc_url=None):
         self.tags_metadata = [
             {"name": "Authentication", "description": "Request and check authorization keys"},
             {"name": "Materials", "description": "All materials known by the printer"},
@@ -15,13 +18,13 @@ class SwaggerAPI(BaseAPI):
             {"name": "PrintJob", "description": "Currently running print"},
             {"name": "System", "description": "Device information"},
             {"name": "History", "description": "History of this printer"},
-            {"name": "Camera", "description": " Camera image and video"},
+            {"name": "Camera", "description": "Camera image and video"},
             {"name": "AirManager", "description": "Air-manager peripheral"},
             {"name": "Ambient_temperature", "description": ""},
         ]
         super().__init__(
-            docs_url="/api",
-            redoc_url="/api/redoc",
+            docs_url=docs_url,
+            redoc_url=redoc_url,
             title="Ultimaker API - Swagger - Simulator",
             openapi_tags=self.tags_metadata,
             description="""REST API for the Ultimaker 3D printer.
@@ -37,8 +40,11 @@ class SwaggerAPI(BaseAPI):
         3) [optional] test the authentication, the earlier given 'id' is the username, the 'key' is the password. Use digest authentication on GET /auth/verify to test this."""
         )
         self.register_routers()
+        # Log registered routes after initialization
+        logger.info(f"SwaggerAPI initialized with routes: {[route.path for route in self.app.routes]}")
 
     def register_routers(self):
+        logger.info("Registering routers for SwaggerAPI")
         self.app.include_router(air_manager.router)
         self.app.include_router(ambient_temperature.router)
         self.app.include_router(authentication.router)
@@ -49,3 +55,4 @@ class SwaggerAPI(BaseAPI):
         self.app.include_router(print_job.router)
         self.app.include_router(printer.router)
         self.app.include_router(system.router)
+        logger.info("All routers registered")

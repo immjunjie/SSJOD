@@ -9,6 +9,7 @@ from pathlib import Path
 # Add the project root directory to the Python path
 sys.path.append(str(Path(__file__).parent))
 
+
 # ========================================================
 # How to Run this?
 # --------------------------------------------------------
@@ -55,7 +56,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize main FastAPI application with docs disabled at root
-app = FastAPI(docs_url=None)
+app = FastAPI(docs_url=None, redoc_url=None)
 
 try:
     # Initialize and mount Cluster API
@@ -63,15 +64,36 @@ try:
     app.mount("/cluster-api/v1", cluster_api.app)
     logger.info("ClusterAPI mounted successfully at /cluster-api/v1")
 
-    # Initialize and mount Swagger API
-    swagger_api = SwaggerAPI()
-    app.mount("/docs", swagger_api.app)
-    logger.info("SwaggerAPI mounted successfully at /docs")
+    # Initialize Swagger API for endpoints (without docs)
+    swagger_api = SwaggerAPI(docs_url=None, redoc_url=None)
+    # Log registered routes for debugging
+    logger.info(f"SwaggerAPI routes: {[route.path for route in swagger_api.app.routes]}")
+    app.mount("/api/v1", swagger_api.app)
+    logger.info("SwaggerAPI endpoints mounted successfully at /api/v1")
+
+    # Initialize Swagger API for documentation only
+    swagger_docs = FastAPI(
+        title="Ultimaker API - Swagger - Simulator",
+        description=swagger_api.app.description,
+        openapi_tags=swagger_api.app.openapi_tags,
+        docs_url="/",
+        redoc_url="/redoc"
+    )
+    # Customize OpenAPI schema to include /api/v1/ prefix
+    original_openapi = swagger_api.app.openapi()
+    modified_openapi = {
+        **original_openapi,
+        "paths": {
+            f"/api/v1{path}": details for path, details in original_openapi["paths"].items()
+        }
+    }
+    swagger_docs.openapi = lambda: modified_openapi  # Set custom OpenAPI schema
+    app.mount("/docs/api", swagger_docs)
+    logger.info("SwaggerAPI documentation mounted successfully at /docs/api")
 
 except Exception as e:
     logger.error(f"API mounting failed: {e}")
     raise
-
 
 @app.get("/")
 async def root_redirect():
@@ -81,13 +103,12 @@ async def root_redirect():
     Returns:
         RedirectResponse: HTTP redirect to the Swagger UI documentation
     """
-    redirect_url = "/docs/api"  # Default redirect to Swagger UI
+    redirect_url = "/docs/api/"  # Redirect to documentation path
     logger.info(f"Root access detected, redirecting to {redirect_url}")
     return RedirectResponse(url=redirect_url)
 
 if __name__ == "__main__":
     import uvicorn
-
 
     uvicorn.run(
         "backend.simulator.main:app",
