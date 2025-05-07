@@ -174,7 +174,7 @@ def start():
         def run_and_reset():
             global is_logging
             try:
-                start_logging(sequence, uploaded_paths, printer_ip, camera_url, selected_filename, duration_seconds)
+                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds, camera_url)
             finally:
                 is_logging = False
                 logger.stop_logger()
