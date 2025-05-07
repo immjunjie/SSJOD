@@ -106,8 +106,14 @@
                     {% endfor %}
                 </div>
                 
+                <!-- Timer input -->
+                <label for="duration_seconds">Logging Duration (seconds):</label>
+                <input type="number" id="duration_seconds" name="duration_seconds" min="1" value="10">
+
+                {% if not logging %}
                 <!-- Start Logging Button -->
-                <button type="submit" class="button start">Start Logging</button>
+                    <button type="submit" class="button start">Start Logging</button>
+                {% endif %}
 
                 <!-- Existing file selection -->
                 <label for="existing_file">Select log file:</label>

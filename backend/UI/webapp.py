@@ -135,8 +135,6 @@ def start():
     global log_thread, is_logging, current_sequence
     uploaded_paths = session.get('uploaded_paths', {})
 
-    
-    
     selected_filename = request.form.get('existing_file', 'New')
     session['selected_hdf5_file'] = selected_filename
 
@@ -152,10 +150,16 @@ def start():
 
     if not is_logging and gcode_exists and stl_exists:
         printer_ip = session.get('printer_ip')
-        log_thread = threading.Thread(
-            target=start_logging,
-            args=(sequence, uploaded_paths, printer_ip, selected_filename)
-        )
+        duration_seconds = int(request.form.get("duration_seconds", "10"))
+
+        def run_and_reset():
+            global is_logging
+            try:
+                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
+            finally:
+                is_logging = False
+
+        log_thread = threading.Thread(target=run_and_reset)
         log_thread.start()
         is_logging = True
 

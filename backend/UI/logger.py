@@ -113,8 +113,13 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
 
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
 
+        start_time = time.time()
+
         try:
             while running:
+                if max_duration is not None and (time.time() - start_time) >= max_duration:
+                    print(f"Logging stopped after {max_duration} seconds.")
+                    break
                 scannum += 1
 
                 # Query all enabled endpoints concurrently
