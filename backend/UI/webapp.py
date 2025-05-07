@@ -43,7 +43,7 @@ os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10):
+def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10, camera_url=None):
     # Prepare file paths and HDF5 filename
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
@@ -81,6 +81,7 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
         socketio=socketio,
         hdf5_filename=hdf5_filename,
         base_url=test_url,
+        camera_url=f'http://{printer_ip}/api/v1/camera/0/snapshot',
         endpoints=filterMask(sequence),
         sequence=sequence,
         stl_path=stl_path,
@@ -94,8 +95,9 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
 def index():
     # Display main page with current state, uploaded files, and saved logs
     filenames = list(session.get('uploaded_paths', {}).keys())
-    
+
     printer_ip = session.get('printer_ip')
+    camera_url = session.get('camera_url')
     printer_error = session.pop('printer_error', '')
 
     existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5'))
@@ -106,6 +108,7 @@ def index():
         logging=is_logging,
         filenames=filenames,
         printer_ip=printer_ip,
+        camera_url=camera_url,
         printer_error=printer_error,
         listOfEndpoints=listOfEndpoints,
         sequence=current_sequence,
@@ -117,12 +120,21 @@ def index():
 def set_printer():
     # Save printer IP after validating printer API docs endpoint
     ip = request.form.get('printer_ip')
+    camera_url = request.form.get('camera_url')
+
     if ip:
         try:
             resp = requests.get(f"http://{ip}/docs/printer", timeout=2)
             if resp.status_code == 200:
                 session['printer_ip'] = ip
                 session['printer_error'] = ''
+
+                #Store camera URL
+                if camera_url:
+                    session['camera_url'] = camera_url
+                else:
+                    #Remove camera_url from session if field is empty
+                    session.pop('camera_url', None)
             else:
                 session['printer_error'] = "Printer did not respond correctly."
         except requests.RequestException:
@@ -134,6 +146,7 @@ def start():
     # Parse form, start background logging thread if not already running
     global log_thread, is_logging, current_sequence
     uploaded_paths = session.get('uploaded_paths', {})
+    camera_url = session.get('camera_url')
 
     selected_filename = request.form.get('existing_file', 'New')
     session['selected_hdf5_file'] = selected_filename
@@ -161,7 +174,7 @@ def start():
         def run_and_reset():
             global is_logging
             try:
-                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
+                start_logging(sequence, uploaded_paths, printer_ip, camera_url, selected_filename, duration_seconds)
             finally:
                 is_logging = False
                 logger.stop_logger()

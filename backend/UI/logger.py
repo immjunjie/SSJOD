@@ -4,6 +4,7 @@ import time  # Timing loops
 import numpy as np  # Numerical arrays
 from datetime import datetime  # Timestamps
 import concurrent.futures  # Thread pool for parallel queries
+from extract_snapshots import PrinterSnapshotter
 
 
 # Global control flag for the logger loop
@@ -68,7 +69,7 @@ def stop_logger():
     running = False
 
 
-def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path, max_duration=None):
+def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path, max_duration=None, camera_url=None):
     global running
     if running:
         print("Logger is already running.")
@@ -79,7 +80,13 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
     scannum = 0
     last_z = 0.0
 
-    layer_height = extractLayerHeightgcode(gcode_path)
+    # Initialize snapshotter if camera URL is provided
+    snapshotter = None
+    if camera_url:
+        snapshotter = PrinterSnapshotter(camera_url, hdf5_filename)
+        print(f"Snapshotter initialized with camera URL: {camera_url}")
+
+    layer_height = extractLayerHeightgcode(gcode_path)  #gets the layer height from the gcode
     if not layer_height:
         print("Layer height could not be determined.")
         return
@@ -135,12 +142,17 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
                 current_z = position_xyz[2]
-                if (current_z >= last_z + (layer_height - 0.05) and current_z <= last_z + (layer_height + 0.05)) or last_z == 0:
+                if (current_z >= last_z + (layer_height - 0.05) and current_z <= last_z + (layer_height + 0.05)) or last_z == 0: #BRACKETS
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
                     layer_grp.attrs['timestamp'] = timestamp
                     last_z = current_z
                     print('Layer changed:', layer)
+
+                    # Capture snapshot for this layer if snapshotter is initialized
+                    if snapshotter and layer > 0:  # Skip layer 0
+                        print(f"Capturing snapshot for layer {layer}")
+                        snapshotter.capture_layer_snapshot(layer)
 
                 # Create dataset for this scan
                 scan_grp = layer_grp.create_group(f'scan_{scannum:06d}')
