@@ -180,6 +180,78 @@ body {
     color: #0056b3; /* Highlight label when checkbox is checked */
 }
 
+/* Timer inputs */
+.duration-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;   /* Centering horizontally */
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+/* Main label for the duration section */
+.duration-wrapper label {
+    font-size: 1em;
+    margin-right: 0.5em;
+    font-weight: 600;
+}
+
+/* Style for the input container */
+.duration-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    justify-content: center;  /* Center the input fields horizontally */
+}
+
+/* Style for the number inputs */
+.duration-input input[type="number"] {
+    width: 50px;
+    padding: 0.3em;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+/* Focus effect on the input fields */
+.duration-input input[type="number"]:focus {
+    border-color: #007BFF;
+}
+
+/* Style for the colon separator */
+.duration-input span {
+    font-size: 1.2em;
+    color: #007BFF;
+}
+
+/* Checkbox and label for "no time limit" */
+.duration-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.9em;
+}
+
+/* Checkbox style */
+.duration-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #007BFF;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.duration-checkbox input[type="checkbox"]:checked {
+    background-color: #007BFF;
+}
+
+/* Hover effect for checkbox */
+.duration-checkbox input[type="checkbox"]:hover {
+    cursor: pointer;
+    background-color: #0056b3;
+}
 /* Hidden Utility Class */
 .hidden {
     display: none !important;

@@ -150,7 +150,13 @@ def start():
 
     if not is_logging and gcode_exists and stl_exists:
         printer_ip = session.get('printer_ip')
-        duration_seconds = int(request.form.get("duration_seconds", "10"))
+        if request.form.get("unlimited_duration"):
+            duration_seconds = None  # or some sentinel like 0
+        else:
+            h = int(request.form.get("hours", 0))
+            m = int(request.form.get("minutes", 0))
+            s = int(request.form.get("seconds", 0))
+            duration_seconds = h * 3600 + m * 60 + s
 
         def run_and_reset():
             global is_logging
@@ -160,7 +166,9 @@ def start():
                 is_logging = False
                 logger.stop_logger()
                 socketio.emit('logging_stopped')
-
+        if duration_seconds and duration_seconds <= 0:
+            session['printer_error'] = "Logging duration must be greater than zero."
+            return redirect(url_for("index"))
         log_thread = threading.Thread(target=run_and_reset)
         log_thread.start()
         is_logging = True

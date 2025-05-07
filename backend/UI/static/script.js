@@ -10,6 +10,15 @@ window.addEventListener('DOMContentLoaded', () => {
   uploadBox.addEventListener('drop', e => { e.preventDefault(); uploadBox.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
+  // timer input, no limit button
+  const checkbox = document.getElementById("unlimitedDuration");
+  const durationInputGroup = document.querySelector(".duration-input");
+
+  checkbox.addEventListener("change", function () {
+    durationInputGroup.style.display = this.checked ? "none" : "flex";
+  });
+
+
   // Load existing uploads
   loadUploadedFiles();
 

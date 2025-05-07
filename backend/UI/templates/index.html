@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <title>3D Printer Logger</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
+
 <body>
     <div class="container">
         <h1>3D Printer Logger</h1>
 
         <!-- Logging status section -->
         {% if logging %}
-            <p>Status: <span class="active">Logging Active</span></p>
-            <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
+        <p>Status: <span class="active">Logging Active</span></p>
+        <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
         {% else %}
-            <p>Status: <span class="inactive">Logging Stopped</span></p>
+        <p>Status: <span class="inactive">Logging Stopped</span></p>
         {% endif %}
 
         <!-- Live log output -->
@@ -37,22 +39,24 @@
             <!-- Printer configuration -->
             <div id="printer-config">
                 {% if printer_ip %}
-                    <p>
-                        <strong>Current Printer:</strong>
-                        <span id="current-printer">{{ printer_ip }}</span>
-                        <button type="button" id="change-printer-btn">Change</button>
-                    </p>
+                <p>
+                    <strong>Current Printer:</strong>
+                    <span id="current-printer">{{ printer_ip }}</span>
+                    <button type="button" id="change-printer-btn">Change</button>
+                </p>
                 {% endif %}
 
                 <!-- Printer IP input form -->
-                <form method="POST" action="/set-printer" class="printer-ip-form" id="printer-form" {% if printer_ip %}style="display:none"{% endif %}>
+                <form method="POST" action="/set-printer" class="printer-ip-form" id="printer-form" {% if printer_ip
+                    %}style="display:none" {% endif %}>
                     <label for="printer_ip">Printer IP:</label>
-                    <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+                    <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x"
+                        value="{{ printer_ip or '' }}">
                     <button type="submit">Set Printer</button>
                 </form>
 
                 {% if printer_error %}
-                    <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
+                <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
                 {% endif %}
             </div>
 
@@ -64,14 +68,14 @@
                 <div class="file-slot" id="gcode-slot">
                     <h4>G-code File</h4>
                     {% if filenames %}
-                        {% for filename in filenames %}
-                            {% if filename.endswith('.gcode') %}
-                                <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
-                            {% endif %}
-                        {% endfor %}
+                    {% for filename in filenames %}
+                    {% if filename.endswith('.gcode') %}
+                    <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
+                    {% endif %}
+                    {% endfor %}
                     {% endif %}
                     {% if not filenames or not filenames|selectattr('endswith', '.gcode') %}
-                        <p><i>No G-code file uploaded yet. Please upload one.</i></p>
+                    <p><i>No G-code file uploaded yet. Please upload one.</i></p>
                     {% endif %}
                 </div>
 
@@ -79,14 +83,14 @@
                 <div class="file-slot" id="stl-slot">
                     <h4>STL File</h4>
                     {% if filenames %}
-                        {% for filename in filenames %}
-                            {% if filename.endswith('.stl') %}
-                                <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
-                            {% endif %}
-                        {% endfor %}
+                    {% for filename in filenames %}
+                    {% if filename.endswith('.stl') %}
+                    <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
+                    {% endif %}
+                    {% endfor %}
                     {% endif %}
                     {% if not filenames or not filenames|selectattr('endswith', '.stl') %}
-                        <p><i>No STL file uploaded yet. Please upload one.</i></p>
+                    <p><i>No STL file uploaded yet. Please upload one.</i></p>
                     {% endif %}
                 </div>
             </div>
@@ -98,28 +102,41 @@
                 <!-- Endpoint checkbox list -->
                 <div class="endpoints-container">
                     {% for endpoint in listOfEndpoints %}
-                        <div class="endpoint-item" id="endpoints">
-                            <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
-                                {% if sequence[loop.index0] == '1' %}checked{% endif %}>
-                            <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
-                        </div>
+                    <div class="endpoint-item" id="endpoints">
+                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}" {% if
+                            sequence[loop.index0]=='1' %}checked{% endif %}>
+                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
+                    </div>
                     {% endfor %}
                 </div>
-                
+
                 <!-- Timer input -->
-                <label for="duration_seconds">Logging Duration (seconds):</label>
-                <input type="number" id="duration_seconds" name="duration_seconds" min="1" value="10">
+                <br>
+                <div class="duration-wrapper">
+                    <label for="durationInputGroup">Time Limit:</label>
+                    <div class="duration-input" id="durationInputGroup">
+                        <input type="number" name="hours" min="0" placeholder="HH">
+                        <span>:</span>
+                        <input type="number" name="minutes" min="0" max="59" placeholder="MM">
+                        <span>:</span>
+                        <input type="number" name="seconds" min="0" max="59" placeholder="SS">
+                    </div>
+                    <label class="duration-checkbox">
+                        <input type="checkbox" id="unlimitedDuration" name="unlimited_duration">
+                        None
+                    </label>
+                </div>
 
                 {% if not logging %}
                 <!-- Start Logging Button -->
-                    <button type="submit" class="button start">Start Logging</button>
+                <button type="submit" class="button start">Start Logging</button>
                 {% endif %}
 
                 <!-- Existing file selection -->
                 <label for="existing_file">Select log file:</label>
                 <select name="existing_file" id="existing_file">
                     {% for file in existing_files %}
-                        <option value="{{ file }}">{{ file }}</option>
+                    <option value="{{ file }}">{{ file }}</option>
                     {% endfor %}
                 </select>
             </form>
@@ -131,7 +148,7 @@
                 <label for="selected_file">Select existing HDF5 file:</label>
                 <select name="selected_file" id="selected_file" required>
                     {% for file in existing_files if file != 'New' %}
-                        <option value="{{ file }}">{{ file }}</option>
+                    <option value="{{ file }}">{{ file }}</option>
                     {% endfor %}
                 </select>
 
@@ -141,7 +158,7 @@
                 <button type="submit">Download HDF5</button>
 
                 {% if downloadBoxError %}
-                    <p>{{ downloadBoxError }}</p>
+                <p>{{ downloadBoxError }}</p>
                 {% endif %}
             </form>
         </div>
@@ -153,4 +170,5 @@
     <!-- Main frontend JS -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>
