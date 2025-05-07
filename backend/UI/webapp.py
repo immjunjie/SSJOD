@@ -153,9 +153,9 @@ def start():
         if request.form.get("unlimited_duration"):
             duration_seconds = None  # or some sentinel like 0
         else:
-            h = int(request.form.get("hours", 0))
-            m = int(request.form.get("minutes", 0))
-            s = int(request.form.get("seconds", 0))
+            h = int(request.form.get("hours", 0) or 0)
+            m = int(request.form.get("minutes", 0) or 0)
+            s = int(request.form.get("seconds", 0) or 0)
             duration_seconds = h * 3600 + m * 60 + s
 
         def run_and_reset():
