@@ -112,3 +112,10 @@ window.addEventListener('DOMContentLoaded', () => {
         });
 }
 });
+
+//refreshes the page
+const socket = io();
+
+socket.on('logging_stopped', function() {
+  window.location.reload();
+});

@@ -158,6 +158,8 @@ def start():
                 start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
             finally:
                 is_logging = False
+                logger.stop_logger()
+                socketio.emit('logging_stopped')
 
         log_thread = threading.Thread(target=run_and_reset)
         log_thread.start()
