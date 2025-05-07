@@ -4,7 +4,7 @@ import time  # Timing loops
 import numpy as np  # Numerical arrays
 from datetime import datetime  # Timestamps
 import concurrent.futures  # Thread pool for parallel queries
-from filter_endpoints import filterMask  # Endpoint filtering
+
 
 # Global control flag for the logger loop
 running = False
