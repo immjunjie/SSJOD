@@ -21,4 +21,5 @@ backend/UI/__pycache__/logger.cpython-311.pyc
 /backend/UI/uploads/
 backend/UI/uploads
 /backend/UI/uploads
-/Print_details_folder/
+/Print_details_folder
+**/*.pyc
