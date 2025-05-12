@@ -2,33 +2,90 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>3D Printer Logger</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta charset="UTF-8" />
+  <title>3D Printer Logger</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 
 <body>
-    <div class="container">
-        <h1>3D Printer Logger</h1>
+  <div class="container">
+    <h1>3D Printer Logger</h1>
 
-        <!-- Logging status section -->
-        {% if logging %}
-        <p>Status: <span class="active">Logging Active</span></p>
-        <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
-        {% else %}
-        <p>Status: <span class="inactive">Logging Stopped</span></p>
+    <p>Status:
+      {% if logging %}
+        <span class="active">Logging Active</span>
+      {% else %}
+        <span class="inactive">Logging Stopped</span>
+      {% endif %}
+    </p>
+
+    <!-- LOGGING SECTION (visible only when logging is active) -->
+    <div id="log-section">
+        <h3>Live Logs</h3>
+        {% if not logging %}
+          <p class="info"><em>Not currently logging. Waiting for new data...</em></p>
         {% endif %}
+        <div id="log-output"></div>
+        <button class="button clear" onclick="clearLogs()">Clear Logs</button>
+        {% if logging %}
+          <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
+        {% endif %}
+      </div>
 
-        <!-- Live log output -->
-        <div class="log-section">
-            <h3>Live Logs</h3>
-            <div id="log-output"></div>
-            <button class="button clear" onclick="clearLogs()">Clear Logs</button>
+    <!-- SETUP SECTION (visible only when logging is NOT active) -->
+    <div id="setup-section" style="{% if logging %}display: none;{% endif %}">
+      <h3>Setup</h3>
+
+      <form action="{{ url_for('start') }}" method="post">
+        <label for="duration_seconds">Logging Duration (seconds):</label>
+        <input type="number" id="duration_seconds" name="duration_seconds" min="1" value="10">
+
+        <label for="existing_file">Select log file:</label>
+        <select name="existing_file" id="existing_file">
+          {% for file in existing_files %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
+
+        <h4>Tracked Printer Stats:</h4>
+        <div class="endpoints-container">
+          {% for endpoint in listOfEndpoints %}
+            <div class="endpoint-item" id="endpoints">
+              <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}"
+                {% if sequence[loop.index0] == '1' %}checked{% endif %}>
+              <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
+            </div>
+          {% endfor %}
         </div>
 
-        <!-- Upload section for .gcode and .stl files -->
-        <div class="upload-section">
-            <h3>Setup</h3>
+        <button type="submit" class="button start">Start Logging</button>
+      </form>
+
+      <div id="file-upload-box">
+        Drag & drop files here, or click to upload (.gcode, .stl)
+      </div>
+      <input type="file" id="file-input" multiple accept=".gcode,.stl">
+
+      <!-- Printer config -->
+      <div id="printer-config">
+        {% if printer_ip %}
+          <p>
+            <strong>Current Printer:</strong>
+            <span id="current-printer">{{ printer_ip }}</span>
+            <button type="button" id="change-printer-btn">Change</button>
+          </p>
+        {% endif %}
+
+        <form method="POST" action="/set-printer" id="printer-form" {% if printer_ip %}style="display:none"{% endif %}>
+          <label for="printer_ip">Printer IP:</label>
+          <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+          <button type="submit">Set Printer</button>
+        </form>
+
+        {% if printer_error %}
+          <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
+        {% endif %}
+      </div>
 
             <div id="file-upload-box">
                 Drag & drop files here, or click to upload (.gcode, .stl)
@@ -164,11 +221,29 @@
         </div>
     </div>
 
-    <!-- Socket.IO for live updates -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- HDF5 Download -->
+    <div class="download-section">
+      <form action="/download" method="POST">
+        <label for="selected_file">Select existing HDF5 file:</label>
+        <select name="selected_file" id="selected_file" required>
+          {% for file in existing_files if file != 'New' %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
 
-    <!-- Main frontend JS -->
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <label for="custom_name">Download as:</label>
+        <input type="text" id="custom_name" name="custom_name" placeholder="my_print_data.hdf5" required>
+
+        <button type="submit">Download HDF5</button>
+
+        {% if downloadBoxError %}
+          <p>{{ downloadBoxError }}</p>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
-
 </html>

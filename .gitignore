@@ -23,3 +23,6 @@ backend/UI/uploads
 /backend/UI/uploads
 /Print_details_folder
 **/*.pyc
+dbs
+dbs/
+/dbs/
