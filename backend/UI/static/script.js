@@ -1,8 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
-  // File Upload Elements
   const uploadBox = document.getElementById('file-upload-box');
   const fileInput = document.getElementById('file-input');
   const uploadedFiles = document.getElementById('uploaded-files');
+  const logDiv = document.getElementById('log-output');
 
   uploadBox.addEventListener('click', () => fileInput.click());
   uploadBox.addEventListener('dragover', e => { e.preventDefault(); uploadBox.classList.add('dragover'); });
@@ -10,43 +10,34 @@ window.addEventListener('DOMContentLoaded', () => {
   uploadBox.addEventListener('drop', e => { e.preventDefault(); uploadBox.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-  // Load existing uploads
-  loadUploadedFiles();
-
-  // Socket.IO Logs
-  const socket = io();
+  // Restore saved logs
   let logs = JSON.parse(localStorage.getItem('printerLogs') || '[]');
-  const logDiv = document.getElementById('log-output');
-
-  // Restore logs
   logs.forEach(entry => {
     const p = document.createElement('p');
     p.innerText = entry;
-    logDiv.appendChild(p);
+    logDiv?.appendChild(p);
   });
+
+  const socket = io();
 
   socket.on('new_log', data => {
     const logEntry = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
     logs.push(logEntry);
-    if (logs.length > 500) logs.shift();
+    if (logs.length > 500) logs.shift(); // Keep max 500
     localStorage.setItem('printerLogs', JSON.stringify(logs));
 
     const p = document.createElement('p');
     p.innerText = logEntry;
     const isAtBottom = logDiv.scrollHeight - logDiv.scrollTop <= logDiv.clientHeight + 5;
     logDiv.appendChild(p);
-    if (isAtBottom) {
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
+    if (isAtBottom) logDiv.scrollTop = logDiv.scrollHeight;
   });
 
-  // Expose clearLogs globally
   window.clearLogs = () => {
     logs = [];
-    localStorage.setItem('printerLogs', JSON.stringify([]));  // overwrite with empty array
-    logDiv.innerHTML = '';
+    localStorage.setItem('printerLogs', JSON.stringify([]));
+    if (logDiv) logDiv.innerHTML = '';
   };
-
 
   function handleFiles(files) {
     const formData = new FormData();
@@ -59,56 +50,45 @@ window.addEventListener('DOMContentLoaded', () => {
 
   function loadUploadedFiles() {
     fetch('/uploaded-files')
-        .then(res => res.json())
-        .then(data => {
-            if (!uploadedFiles) return;
+      .then(res => res.json())
+      .then(data => {
+        if (!uploadedFiles) return;
 
-            // Start the new layout
-            let html = '<strong>Uploaded Files:</strong><ul>';
+        let html = '<strong>Uploaded Files:</strong><ul>';
+        let hasGcode = false, hasStl = false;
 
-            // Track presence
-            let hasGcode = false;
-            let hasStl = false;
-
-            // Process uploaded files
-            data.files.forEach(fname => {
-                const cls = fname.endsWith('.gcode') ? 'gcode' : fname.endsWith('.stl') ? 'stl' : '';
-                if (cls === 'gcode') hasGcode = true;
-                if (cls === 'stl') hasStl = true;
-
-                html += `<li class="${cls}">${fname} <button class="delete-file" data-filename="${fname}">×</button></li>`;
-            });
-
-            // Add empty slots if missing
-            if (!hasGcode) {
-                html += `<li class="gcode placeholder">G-code file required.</li>`;
-            }
-            if (!hasStl) {
-                html += `<li class="stl placeholder">STL file required.</li>`;
-            }
-
-            html += '</ul>';
-            uploadedFiles.innerHTML = html;
-
-            // Delete buttons
-            document.querySelectorAll('.delete-file').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    fetch(`/delete-file/${encodeURIComponent(btn.dataset.filename)}`, { method: 'POST' })
-                        .then(loadUploadedFiles);
-                });
-            });
-
-            // Change printer button handling
-            const changeBtn = document.getElementById('change-printer-btn');
-            const printerForm = document.getElementById('printer-form');
-            const currentPrinterWrapper = changeBtn ? changeBtn.parentElement : null;
-
-            if (changeBtn && printerForm && currentPrinterWrapper) {
-                changeBtn.addEventListener('click', () => {
-                    printerForm.style.display = 'block';
-                    currentPrinterWrapper.style.display = 'none';
-                });
-            }
+        data.files.forEach(fname => {
+          const cls = fname.endsWith('.gcode') ? 'gcode' : fname.endsWith('.stl') ? 'stl' : '';
+          if (cls === 'gcode') hasGcode = true;
+          if (cls === 'stl') hasStl = true;
+          html += `<li class="${cls}">${fname} <button class="delete-file" data-filename="${fname}">×</button></li>`;
         });
-}
+
+        if (!hasGcode) html += `<li class="gcode placeholder">G-code file required.</li>`;
+        if (!hasStl) html += `<li class="stl placeholder">STL file required.</li>`;
+        html += '</ul>';
+
+        uploadedFiles.innerHTML = html;
+
+        document.querySelectorAll('.delete-file').forEach(btn => {
+          btn.addEventListener('click', () => {
+            fetch(`/delete-file/${encodeURIComponent(btn.dataset.filename)}`, { method: 'POST' })
+              .then(loadUploadedFiles);
+          });
+        });
+
+        const changeBtn = document.getElementById('change-printer-btn');
+        const printerForm = document.getElementById('printer-form');
+        const currentPrinterWrapper = changeBtn ? changeBtn.parentElement : null;
+
+        if (changeBtn && printerForm && currentPrinterWrapper) {
+          changeBtn.addEventListener('click', () => {
+            printerForm.style.display = 'block';
+            currentPrinterWrapper.style.display = 'none';
+          });
+        }
+      });
+  }
+
+  loadUploadedFiles(); // Initial call
 });
