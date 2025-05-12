@@ -64,6 +64,7 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
 
     # Verify printer connectivity
     test_url = f"http://{printer_ip}/api/v1/printer"
+    camera_url = f"http://{printer_ip}/api/v1/camera"
     try:
         response = requests.get(test_url, timeout=2)
         if response.status_code != 200:
@@ -81,7 +82,7 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
         socketio=socketio,
         hdf5_filename=hdf5_filename,
         base_url=test_url,
-        camera_url=f'http://{printer_ip}/api/v1/camera/0/snapshot',
+        camera_url=camera_url,
         endpoints=filterMask(sequence),
         sequence=sequence,
         stl_path=stl_path,
