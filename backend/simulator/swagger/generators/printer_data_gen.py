@@ -1,29 +1,36 @@
 import random
-from typing import Dict, Any
+from typing import Dict, Any, List
 import uuid
 
 
 class PrinterDataGenerator:
     def __init__(self):
         self._printer_serial = "UM3-" + "".join(random.choices("0123456789ABCDEF", k=8))
+        self._refresh_data()
 
-    def generate_printer_info(self) -> Dict[str, Any]:
+    def _refresh_data(self):
+        """refresh all data"""
+        self._printer_info = self._generate_printer_info()
+        self._printer_status = self._generate_printer_status()
+
+    # ----------------------- Generators ------------------------
+    def _generate_printer_info(self) -> Dict[str, Any]:
         return {
-            "bed": self.generate_bed_status(),
+            "bed": self._generate_bed_status(),
             "diagnostics": {},
-            "heads": [self.generate_head_status(0), self.generate_head_status(1)],
-            "led": self.generate_led_status(),
-            "network": self.generate_network_status(),
+            "heads": [self._generate_head_status(0), self._generate_head_status(1)],
+            "led": self._generate_led_status(),
+            "network": self._generate_network_status(),
             "status": random.choice(["printing", "idle", "error"]),
             "validate_header": {}
         }
 
-    def generate_printer_status(self) -> Dict[str, Any]:
+    def _generate_printer_status(self) -> Dict[str, Any]:
         return {
             "status": random.choice(["printing", "idle", "error"]),
         }
 
-    def generate_bed_status(self) -> Dict[str, Any]:
+    def _generate_bed_status(self) -> Dict[str, Any]:
         return {
             "pre_heat": {"active": False},
             "temperature": {
@@ -33,11 +40,11 @@ class PrinterDataGenerator:
             "type": "glass"
         }
 
-    def generate_head_status(self, head_index: int) -> Dict[str, Any]:
+    def _generate_head_status(self, head_index: int) -> Dict[str, Any]:
         material_guid = str(uuid.uuid4()) if random.random() > 0.3 else ""
         return {
             "acceleration": 1500,
-            "extruders": [self.generate_extruder_status(head_index, material_guid)],
+            "extruders": [self._generate_extruder_status(head_index, material_guid)],
             "fan": 100,
             "jerk": {"x": 20, "y": 20, "z": 0.4},
             "max_speed": {"x": 300, "y": 300, "z": 40},
@@ -48,7 +55,7 @@ class PrinterDataGenerator:
             }
         }
 
-    def generate_extruder_status(self, head_index: int, material_guid: str) -> Dict[str, Any]:
+    def _generate_extruder_status(self, head_index: int, material_guid: str) -> Dict[str, Any]:
         return {
             "active_material": {
                 "GUID": material_guid,
@@ -84,7 +91,7 @@ class PrinterDataGenerator:
             }
         }
 
-    def generate_led_status(self) -> Dict[str, Any]:
+    def _generate_led_status(self) -> Dict[str, Any]:
         return {
             "blink": {},
             "brightness": 100,
@@ -92,7 +99,7 @@ class PrinterDataGenerator:
             "saturation": 0
         }
 
-    def generate_network_status(self) -> Dict[str, Any]:
+    def _generate_network_status(self) -> Dict[str, Any]:
         return {
             "ethernet": {
                 "connected": True,
@@ -106,3 +113,61 @@ class PrinterDataGenerator:
             },
             "wifi_networks": []
         }
+
+    # ----------------------- Public Interface ------------------------
+    def refresh(self):
+        """refresh all data manually"""
+        self._refresh_data()
+
+    @property
+    def printer_info(self) -> Dict[str, Any]:
+        return self._printer_info
+
+    @property
+    def printer_status(self) -> Dict[str, Any]:
+        return self._printer_status
+
+    @property
+    def bed_status(self) -> Dict[str, Any]:
+        return self._printer_info["bed"]
+
+    @property
+    def head_statuses(self) -> List[Dict[str, Any]]:
+        return self._printer_info["heads"]
+
+    @property
+    def led_status(self) -> Dict[str, Any]:
+        return self._printer_info["led"]
+
+    @property
+    def network_status(self) -> Dict[str, Any]:
+        return self._printer_info["network"]
+
+    @property
+    def serial_number(self) -> str:
+        return self._printer_serial
+
+
+if __name__ == "__main__":
+    simulator = PrinterDataGenerator()
+
+    # Print the data initially
+    print("Initial Data:")
+    print(simulator.printer_info)
+    print(simulator.printer_status)
+    print(simulator.bed_status)
+    print(simulator.head_statuses)
+    print(simulator.led_status)
+    print(simulator.network_status)
+    print(simulator.serial_number)
+
+    # Print the data at the second time
+    simulator.refresh()
+    print("\nAfter Refresh:")
+    print(simulator.printer_info)
+    print(simulator.printer_status)
+    print(simulator.bed_status)
+    print(simulator.head_statuses)
+    print(simulator.led_status)
+    print(simulator.network_status)
+    print(simulator.serial_number)
