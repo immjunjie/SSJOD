@@ -81,7 +81,7 @@ class PrinterSnapshotter:
                         screenshots_grp = f['Screenshots']
 
                     # Create dataset for this layer's snapshot
-                    snap_name = f"layer_{formatted_layer}"
+                    snap_name = f"screenshot_{formatted_layer}"
                     dset = screenshots_grp.create_dataset(
                         snap_name,
                         data=np.frombuffer(snapshot_data, dtype=np.uint8)
