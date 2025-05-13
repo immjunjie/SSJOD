@@ -122,6 +122,7 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
 
         start_time = time.time()
 
+        first_scan = True
         try:
             while running:
                 if max_duration is not None and (time.time() - start_time) >= max_duration:
@@ -142,7 +143,16 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                     position_xyz = np.array([0.0, 0.0, 0.0])
 
                 current_z = position_xyz[2]
-                if (current_z >= last_z + (layer_height - 0.05) and current_z <= last_z + (layer_height + 0.05)) or last_z == 0: #BRACKETS
+
+                if first_scan:
+                    layer = int(round(current_z / layer_height))
+                    layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
+                    layer_grp.attrs['timestamp'] = timestamp
+                    last_z = current_z
+                    first_scan = False
+                    print(f"Starting at layer {layer} (Z={current_z:.3f} mm)")
+
+                elif (current_z >= last_z + (layer_height - 0.05) and current_z <= last_z + (layer_height + 0.05)) or last_z == 0: #BRACKETS
                     layer += 1
                     layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
                     layer_grp.attrs['timestamp'] = timestamp
@@ -198,6 +208,7 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                         'timestamp': timestamp,
                     }
                     socketio.emit('new_log', log_entry)
+                    print(position_xyz[2])
 
                 # Loop timing control can be added here (commented out)
         except KeyboardInterrupt:
