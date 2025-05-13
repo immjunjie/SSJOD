@@ -52,7 +52,7 @@ if __name__ == "__main__":
         for i in range(3):
             print(f"\nIteration {i + 1}:")
             print("Printer status:", simulator.get_printer_status())
-            print("Bed temperature:", simulator.get_bed_status()["temperature"]["current"])
+            print("Bed temperature:", simulator.get_bed_status()["temperature"])
             # Manual refresh
             simulator.refresh()
             time.sleep(1)
