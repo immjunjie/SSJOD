@@ -69,7 +69,7 @@ def stop_logger():
     running = False
 
 
-def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequence, stl_path, gcode_path, max_duration=None, camera_url=None):
+def run_logger_with_socket(socketio, hdf5_filename, base_url, camera_url, endpoints, sequence, stl_path, gcode_path, max_duration=None):
     global running
     if running:
         print("Logger is already running.")
@@ -82,7 +82,8 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
 
     # Initialize snapshotter if camera URL is provided
     snapshotter = None
-    if camera_url:
+    screenshots_enabled = sequence[-1] == '1' if len(sequence) >= 12 else False
+    if camera_url and screenshots_enabled:
         snapshotter = PrinterSnapshotter(camera_url, hdf5_filename)
         print(f"Snapshotter initialized with camera URL: {camera_url}")
 

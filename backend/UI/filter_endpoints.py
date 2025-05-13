@@ -11,7 +11,8 @@ def filterMask(bit_sequence):
         "jerk": "/heads/0/extruders/0/feeder/jerk",
         "active_material": "/heads/0/extruders/0/active_material",
         "length_remaining": "/heads/0/extruders/0/active_material/length_remaining",
-        "max_speed": "/heads/0/extruders/0/feeder/max_speed"
+        "max_speed": "/heads/0/extruders/0/feeder/max_speed",
+        "screenshots": "/camera/0/snapshot"
     }
 
     # Ensure the bit sequence is valid
@@ -22,7 +23,7 @@ def filterMask(bit_sequence):
     filtered = {
         key: endpoints[key]
         for i, key in enumerate(keys)
-        if bit_sequence[i] == '1'
+        if i < len(bit_sequence) and bit_sequence[i] == '1'
     }
 
     return filtered
