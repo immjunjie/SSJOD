@@ -3,6 +3,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('file-input');
   const uploadedFiles = document.getElementById('uploaded-files');
   const logDiv = document.getElementById('log-output');
+  const timerDisplay = document.getElementById('timer-display');
   const socket = io();
 
   uploadBox.addEventListener('click', () => fileInput.click());
@@ -51,6 +52,29 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('printerLogs', JSON.stringify([]));
     if (logDiv) logDiv.innerHTML = '';
   };
+
+  function updateTimerDisplay() {
+    const hrs = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
+    const secs = String(secondsLeft % 60).padStart(2, '0');
+    timerDisplay.textContent = `${hrs}:${mins}:${secs}`;
+  }
+
+  let secondsLeft = 0;
+  if (timerDisplay && timerDisplay.dataset.seconds) {
+    secondsLeft = parseInt(timerDisplay.dataset.seconds, 10);
+}
+
+  updateTimerDisplay();
+  const countdownInterval = setInterval(() => {
+    secondsLeft -= 1;
+    if (secondsLeft < 0) {
+      clearInterval(countdownInterval);
+      window.location.reload();
+    } else {
+      updateTimerDisplay();
+    }
+  }, 1000);
 
   function handleFiles(files) {
     const formData = new FormData();
@@ -105,9 +129,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   loadUploadedFiles(); // Initial call
 });
-
-//refreshes the page
-const socket = io();
 
 socket.on('logging_stopped', function() {
   window.location.reload();

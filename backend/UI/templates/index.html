@@ -20,7 +20,12 @@
     <!-- LOGGING SECTION (visible only when logging is active) -->
     <div id="log-section">
         <h3>Live Logs</h3>
-        {% if not logging %}
+        {% if logging %}
+          <div id="countdown-timer" class="countdown-timer">
+            <em><span class="info" id="timer-display" data-seconds="{{ remaining_time }}"></span></em>
+          </div>
+          <br>
+        {% else %}
           <p class="info"><em>Not currently logging. Waiting for new data...</em></p>
         {% endif %}
         <div id="log-output"></div>
@@ -89,7 +94,7 @@
 
         <form method="POST" action="/set-printer" id="printer-form" {% if printer_ip %}style="display:none"{% endif %}>
           <label for="printer_ip">Printer IP:</label>
-          <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x" value="{{ printer_ip or '' }}">
+          <input type="text" id="printer_ip" name="printer_ip" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" placeholder="192.168.1.x" required>
           <button type="submit">Set Printer</button>
         </form>
 
