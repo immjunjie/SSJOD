@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <title>3D Printer Logger</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
-
 <body>
   <div class="container">
     <h1>3D Printer Logger</h1>
@@ -37,8 +35,21 @@
       <h3>Setup</h3>
 
       <form action="{{ url_for('start') }}" method="post">
-        <label for="duration_seconds">Logging Duration (seconds):</label>
-        <input type="number" id="duration_seconds" name="duration_seconds" min="1" value="10">
+        <br>
+            <div class="duration-wrapper">
+                <label for="durationInputGroup">Time Limit:</label>
+                <div class="duration-input" id="durationInputGroup">
+                    <input type="number" name="hours" min="0" placeholder="HH">
+                    <span>:</span>
+                    <input type="number" name="minutes" min="0" max="59" placeholder="MM">
+                    <span>:</span>
+                    <input type="number" name="seconds" min="0" max="59" placeholder="SS">
+                </div>
+                <label class="duration-checkbox">
+                    <input type="checkbox" id="unlimitedDuration" name="unlimited_duration">
+                    None
+                </label>
+            </div>
 
         <label for="existing_file">Select log file:</label>
         <select name="existing_file" id="existing_file">
@@ -87,138 +98,11 @@
         {% endif %}
       </div>
 
-            <div id="file-upload-box">
-                Drag & drop files here, or click to upload (.gcode, .stl)
-            </div>
-            <input type="file" id="file-input" multiple accept=".gcode,.stl">
-            <br>
-
-            <!-- Printer configuration -->
-            <div id="printer-config">
-                {% if printer_ip %}
-                <p>
-                    <strong>Current Printer:</strong>
-                    <span id="current-printer">{{ printer_ip }}</span>
-                    <button type="button" id="change-printer-btn">Change</button>
-                </p>
-                {% endif %}
-
-                <!-- Printer IP input form -->
-                <form method="POST" action="/set-printer" class="printer-ip-form" id="printer-form" {% if printer_ip
-                    %}style="display:none" {% endif %}>
-                    <label for="printer_ip">Printer IP:</label>
-                    <input type="text" id="printer_ip" name="printer_ip" placeholder="192.168.1.x"
-                        value="{{ printer_ip or '' }}">
-                    <button type="submit">Set Printer</button>
-                </form>
-
-                {% if printer_error %}
-                <p class="error"><strong>Error:</strong> {{ printer_error }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Uploaded files display -->
-            <div id="uploaded-files" class="file-container">
-                <strong>Uploaded Files:</strong>
-
-                <!-- G-code slot -->
-                <div class="file-slot" id="gcode-slot">
-                    <h4>G-code File</h4>
-                    {% if filenames %}
-                    {% for filename in filenames %}
-                    {% if filename.endswith('.gcode') %}
-                    <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
-                    {% if not filenames or not filenames|selectattr('endswith', '.gcode') %}
-                    <p><i>No G-code file uploaded yet. Please upload one.</i></p>
-                    {% endif %}
-                </div>
-
-                <!-- STL slot -->
-                <div class="file-slot" id="stl-slot">
-                    <h4>STL File</h4>
-                    {% if filenames %}
-                    {% for filename in filenames %}
-                    {% if filename.endswith('.stl') %}
-                    <p>{{ filename }} <button class="delete-file" data-filename="{{ filename }}">×</button></p>
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
-                    {% if not filenames or not filenames|selectattr('endswith', '.stl') %}
-                    <p><i>No STL file uploaded yet. Please upload one.</i></p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Start logging form -->
-            <form action="{{ url_for('start') }}" method="post">
-                <h3>Tracked Printer Stats:</h3>
-
-                <!-- Endpoint checkbox list -->
-                <div class="endpoints-container">
-                    {% for endpoint in listOfEndpoints %}
-                    <div class="endpoint-item" id="endpoints">
-                        <input type="checkbox" id="cb{{ loop.index0 }}" name="ep{{ loop.index0 }}" {% if
-                            sequence[loop.index0]=='1' %}checked{% endif %}>
-                        <label for="cb{{ loop.index0 }}">{{ endpoint }}</label>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Timer input -->
-                <br>
-                <div class="duration-wrapper">
-                    <label for="durationInputGroup">Time Limit:</label>
-                    <div class="duration-input" id="durationInputGroup">
-                        <input type="number" name="hours" min="0" placeholder="HH">
-                        <span>:</span>
-                        <input type="number" name="minutes" min="0" max="59" placeholder="MM">
-                        <span>:</span>
-                        <input type="number" name="seconds" min="0" max="59" placeholder="SS">
-                    </div>
-                    <label class="duration-checkbox">
-                        <input type="checkbox" id="unlimitedDuration" name="unlimited_duration">
-                        None
-                    </label>
-                </div>
-
-                {% if not logging %}
-                <!-- Start Logging Button -->
-                <button type="submit" class="button start">Start Logging</button>
-                {% endif %}
-
-                <!-- Existing file selection -->
-                <label for="existing_file">Select log file:</label>
-                <select name="existing_file" id="existing_file">
-                    {% for file in existing_files %}
-                    <option value="{{ file }}">{{ file }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-
-        <!-- HDF5 download section -->
-        <div class="download-section">
-            <form action="/download" method="POST">
-                <label for="selected_file">Select existing HDF5 file:</label>
-                <select name="selected_file" id="selected_file" required>
-                    {% for file in existing_files if file != 'New' %}
-                    <option value="{{ file }}">{{ file }}</option>
-                    {% endfor %}
-                </select>
-
-                <label for="custom_name">Download as:</label>
-                <input type="text" id="custom_name" name="custom_name" placeholder="my_print_data.hdf5" required>
-
-                <button type="submit">Download HDF5</button>
-
-                {% if downloadBoxError %}
-                <p>{{ downloadBoxError }}</p>
-                {% endif %}
-            </form>
-        </div>
+      <!-- Uploaded Files Section -->
+      <div id="uploaded-files" class="file-container">
+        <strong>Uploaded Files:</strong>
+        <!-- Slots will be filled by JS -->
+      </div>
     </div>
 
     <!-- HDF5 Download -->
@@ -247,3 +131,7 @@
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
+
+
+
+
