@@ -101,6 +101,7 @@ def index():
     printer_ip = session.get('printer_ip')
     camera_url = session.get('camera_url')
     printer_error = session.pop('printer_error', '')
+    remaining_time = session.get('remaining_time')
 
     existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5'))
     selected_file = session.get('selected_hdf5_file', 'New')
@@ -115,6 +116,7 @@ def index():
         listOfEndpoints=listOfEndpoints,
         sequence=current_sequence,
         existing_files=existing_files,
+        remaining_time=remaining_time,
         selected_file=selected_file
     )
 
@@ -168,9 +170,13 @@ def start():
         if request.form.get("unlimited_duration"):
             duration_seconds = None  # or some sentinel like 0
         else:
-            h = int(request.form.get("hours", 0) or 0)
-            m = int(request.form.get("minutes", 0) or 0)
-            s = int(request.form.get("seconds", 0) or 0)
+            try:
+                h = int(request.form.get("hours", 0) or 0)
+                m = int(request.form.get("minutes", 0) or 0)
+                s = int(request.form.get("seconds", 0) or 0)
+            except ValueError:
+                session['printer_error'] = "Invalid time format. Please enter numbers."
+                return redirect(url_for("index"))
             duration_seconds = h * 3600 + m * 60 + s
 
         def run_and_reset():
@@ -183,11 +189,13 @@ def start():
                 socketio.emit('logging_stopped')
         if duration_seconds and duration_seconds <= 0:
             session['printer_error'] = "Logging duration must be greater than zero."
+            session.pop('remaining_time', None)
             return redirect(url_for("index"))
         log_thread = threading.Thread(target=run_and_reset)
         log_thread.start()
         is_logging = True
 
+    session['remaining_time'] = duration_seconds
     return redirect(url_for("index"))
 
 @app.route("/stop")
