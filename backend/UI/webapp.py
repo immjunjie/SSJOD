@@ -20,7 +20,8 @@ listOfEndpoints = [
     "Jerk",
     "Active Material",
     "Remaining Length",
-    "Max Speed"
+    "Max Speed",
+    "Screenshots"
 ]
 
 # Bitstring representing which endpoints are currently enabled (default: all on)
@@ -43,7 +44,7 @@ os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10, camera_url=None):
+def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10):
     # Prepare file paths and HDF5 filename
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
@@ -175,7 +176,7 @@ def start():
         def run_and_reset():
             global is_logging
             try:
-                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds, camera_url)
+                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
             finally:
                 is_logging = False
                 logger.stop_logger()
