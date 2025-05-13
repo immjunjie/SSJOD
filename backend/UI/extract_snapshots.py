@@ -94,7 +94,5 @@ class PrinterSnapshotter:
                     # Update count
                     count = screenshots_grp.attrs['count']
                     screenshots_grp.attrs['count'] = count + 1
-
-                    print(f"Saved snapshot for layer {layer_number}")
             except Exception as e:
                 print(f"Error saving snapshot to HDF5: {e}")

@@ -116,7 +116,6 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
         screenshots_grp.attrs['count'] = 0
 
         layers_grp = f.create_group('layers')
-        layer_grp = layers_grp.create_group(f'layer_{layer:04d}')
 
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(endpoints))
 
@@ -160,7 +159,7 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                     print('Layer changed:', layer)
 
                     # Capture snapshot for this layer if snapshotter is initialized
-                    if snapshotter and layer > 0:  # Skip layer 0
+                    if snapshotter:  # Skip layer 0
                         print(f"Capturing snapshot for layer {layer}")
                         snapshotter.capture_layer_snapshot(layer)
 
@@ -208,7 +207,6 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, endpoints, sequenc
                         'timestamp': timestamp,
                     }
                     socketio.emit('new_log', log_entry)
-                    print(position_xyz[2])
 
                 # Loop timing control can be added here (commented out)
         except KeyboardInterrupt:
