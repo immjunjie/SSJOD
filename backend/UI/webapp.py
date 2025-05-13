@@ -195,7 +195,7 @@ def start():
         log_thread.start()
         is_logging = True
 
-    session['remaining_time'] = duration_seconds
+        session['remaining_time'] = duration_seconds
     return redirect(url_for("index"))
 
 @app.route("/stop")

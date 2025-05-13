@@ -21,9 +21,11 @@
     <div id="log-section">
         <h3>Live Logs</h3>
         {% if logging %}
+          {% if remaining_time %}
           <div id="countdown-timer" class="countdown-timer">
             <em><span class="info" id="timer-display" data-seconds="{{ remaining_time }}"></span></em>
           </div>
+          {% endif %}
           <br>
         {% else %}
           <p class="info"><em>Not currently logging. Waiting for new data...</em></p>
