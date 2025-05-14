@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadUploadedFiles();
 
   // Socket.IO Logs
- 
+
   let logs = JSON.parse(localStorage.getItem('printerLogs') || '[]');
   logs.forEach(entry => {
     const p = document.createElement('p');
@@ -35,7 +35,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
   socket.on('new_log', data => {
-    const logEntry = `[${data.timestamp}] Layer ${data.layer} | Z: ${data.position_z} | Scan: ${data.scan}`;
+    let logEntry = `[${data.timestamp}] Layer ${data.layer} | Scan: ${data.scan}`;
+
+    if (data.endpoint_data) {
+      for (const [key, value] of Object.entries(data.endpoint_data)) {
+        logEntry += ` | ${key}: ${value}`;
+      }
+    }
     logs.push(logEntry);
     if (logs.length > 500) logs.shift(); // Keep max 500
     localStorage.setItem('printerLogs', JSON.stringify(logs));
@@ -63,7 +69,7 @@ window.addEventListener('DOMContentLoaded', () => {
   let secondsLeft = 0;
   if (timerDisplay && timerDisplay.dataset.seconds) {
     secondsLeft = parseInt(timerDisplay.dataset.seconds, 10);
-}
+  }
 
   updateTimerDisplay();
   const countdownInterval = setInterval(() => {
@@ -130,6 +136,6 @@ window.addEventListener('DOMContentLoaded', () => {
   loadUploadedFiles(); // Initial call
 });
 
-socket.on('logging_stopped', function() {
+socket.on('logging_stopped', function () {
   window.location.reload();
 });

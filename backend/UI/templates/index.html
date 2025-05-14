@@ -30,7 +30,7 @@
         {% else %}
           <p class="info"><em>Not currently logging. Waiting for new data...</em></p>
         {% endif %}
-        <div id="log-output"></div>
+        <div id="log-output" class="log-output {% if logging %}log-tall{% endif %}"></div>
         <button class="button clear" onclick="clearLogs()">Clear Logs</button>
         {% if logging %}
           <a href="{{ url_for('stop') }}" class="button stop">Stop Logging</a>
