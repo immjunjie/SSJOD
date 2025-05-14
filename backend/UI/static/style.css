@@ -349,3 +349,8 @@ body {
     font-weight: bold;
     color: red;
 }
+
+/* error messages */
+.error-message {
+    color: #dc3545;
+  }

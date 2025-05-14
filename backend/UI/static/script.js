@@ -139,3 +139,56 @@ window.addEventListener('DOMContentLoaded', () => {
 socket.on('logging_stopped', function () {
   window.location.reload();
 });
+
+// error messages
+function validateForm() {
+  let isValid = true;
+
+  // Clear previous error messages
+  document.getElementById("duration-error").textContent = "";
+  document.getElementById("printer-error").textContent = "";
+  document.getElementById("files-error").textContent = "";
+  document.getElementById("endpoints-error").textContent = "";
+
+  // Duration check
+  const unlimited = document.getElementById("unlimitedDuration").checked;
+  const hours = document.querySelector('input[name="hours"]').value;
+  const minutes = document.querySelector('input[name="minutes"]').value;
+  const seconds = document.querySelector('input[name="seconds"]').value;
+  if (!unlimited && !hours && !minutes && !seconds) {
+    document.getElementById("duration-error").textContent = "* Please set a time limit or check 'None'.";
+    isValid = false;
+  }
+
+  // Printer IP check
+  const printerForm = document.getElementById("printer-form");
+  if (printerForm && printerForm.style.display !== "none") {
+    const printerInput = document.getElementById("printer_ip").value;
+    if (!printerInput) {
+      document.getElementById("printer-error").textContent = "* Please set a printer IP address.";
+      isValid = false;
+    }
+  }
+
+  // File upload check
+  const hasGcode = document.querySelector('#uploaded-files li.gcode') !== null && 
+                   !document.querySelector('#uploaded-files li.gcode').classList.contains('placeholder');
+  const hasStl = document.querySelector('#uploaded-files li.stl') !== null && 
+                 !document.querySelector('#uploaded-files li.stl').classList.contains('placeholder');
+
+  if (!hasGcode || !hasStl) {
+    document.getElementById("files-error").textContent = '* Both G-code and STL files are required.';
+    isValid = false;
+  }
+
+  // Endpoints check
+  const endpointCheckboxes = document.querySelectorAll('#endpoints-container input[type="checkbox"]');
+  const anyChecked = Array.from(endpointCheckboxes).some(cb => cb.checked);
+  if (!anyChecked) {
+    document.getElementById("endpoints-error").textContent = "* Please select at least one printer stat to track.";
+    isValid = false;
+  }
+  
+
+  return isValid;
+}
