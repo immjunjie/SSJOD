@@ -202,37 +202,15 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, camera_url, endpoi
                     if sequence[1] == '1':
                         bed_info = results.get("bed_temp", {})
                         endpoint_data["Bed Temp"] = convert_to_float(bed_info.get("current", 0))
-                        endpoint_data["Bed TargetTemp"] = convert_to_float(bed_info.get("target", 0))
 
                     if sequence[2] == '1':
                         endpoint_data["currentTemp"] = convert_to_float(results.get("nozzle_temp_current", 0))
-
-                    if sequence[3] == '1':
-                        endpoint_data["targetTemp"] = convert_to_float(results.get("nozzle_temp_target", 0))
-
-                    if sequence[4] == '1':
-                        endpoint_data["TimeSpentHot"] = convert_to_float(results.get("time_spent_hot", 0))
-
-                    if sequence[5] == '1':
-                        endpoint_data["Status"] = str(results.get("status", {}))
-
-                    if sequence[6] == '1':
-                        endpoint_data["MaterialExtruded"] = convert_to_float(results.get("material_extruded", 0))
-
-                    if sequence[7] == '1':
-                        endpoint_data["LEDs"] = convert_to_float(results.get("led", 0))
 
                     if sequence[8] == '1':
                         endpoint_data["Jerk"] = convert_to_float(results.get("jerk", 0))
 
                     if sequence[9] == '1':
                         endpoint_data["ActiveMaterial"] = convert_to_float(results.get("active_material", 0))
-
-                    if sequence[10] == '1':
-                        endpoint_data["LengthRemaining"] = convert_to_float(results.get("length_remaining", 0))
-
-                    if sequence[11] == '1':
-                        endpoint_data["MaxSpeed"] = convert_to_float(results.get("max_speed", 0))
 
                     log_entry = {
                         'scan': scannum,
