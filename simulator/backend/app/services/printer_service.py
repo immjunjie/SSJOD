@@ -1,6 +1,6 @@
 import time
 from typing import Dict, Any
-from simulator.swagger.generators.printer_data_gen import PrinterDataGenerator
+from simulator.backend.app.domain.models.printer_data_gen import PrinterDataGenerator
 
 class PrinterService:
     def __init__(self):
