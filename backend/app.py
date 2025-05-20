@@ -1,11 +1,13 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file  # Web framework and utilities
-from flask_socketio import SocketIO  # WebSocket support for real-time updates
-import threading  # Background threads for non-blocking logging
-import logger  # Custom logger module (see logger.py below)
-from filter_endpoints import filterMask  # Function to filter endpoints based on user selection
-import requests  # HTTP client for printer API
+# /backend/app.py
 import os  # Filesystem operations
-import re
+import re  # Regex cleaning
+import threading  # Background threads for non-blocking logging
+import requests  # HTTP client for printer API
+from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file
+from flask_socketio import SocketIO  # WebSocket support for real-time updates
+
+from . import logger  # Custom logger module
+from .filter_endpoints import filterMask  # Function to filter endpoints based on user selection
 
 # List of telemetry endpoints to choose from
 listOfEndpoints = [
@@ -27,8 +29,16 @@ listOfEndpoints = [
 # Bitstring representing which endpoints are currently enabled (default: all on)
 current_sequence = "1" * len(listOfEndpoints)
 
-# Initialize Flask app and SocketIO
-app = Flask(__name__)
+# Compute paths for templates and static assets (frontend folder is sibling to backend)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'frontend', 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, 'frontend', 'static')
+
+# Initialize Flask app and SocketIO with custom folders
+app = Flask(__name__,
+            template_folder=TEMPLATE_DIR,
+            static_folder=STATIC_DIR,
+            static_url_path='/static')
 app.secret_key = 'dojossjod'  # Session encryption key
 socketio = SocketIO(app)
 
@@ -37,8 +47,8 @@ log_thread = None
 is_logging = False
 
 # Configure upload and detail storage folders
-UPLOAD_FOLDER = 'uploads'
-DETAILS_FOLDER = 'Print_details_folder'
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -58,7 +68,6 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
         hdf5_filename = os.path.join(DETAILS_FOLDER, selected_filename)
     else:
         existing = [f for f in os.listdir(DETAILS_FOLDER) if f.startswith("print_details_") and f.endswith(".hdf5")]
-        # Extract indices to auto-increment
         indices = [int(f.split("_")[-1].split(".")[0]) for f in existing if f.split("_")[-1].split(".")[0].isdigit()]
         next_index = max(indices) + 1 if indices else 0
         hdf5_filename = os.path.join(DETAILS_FOLDER, f"print_details_{next_index}.hdf5")
@@ -78,7 +87,6 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
     # Launch logger in current thread (logger handles its own loop)
     global is_logging
     is_logging = True
-    # Pass the duration limit to the logger
     logger.run_logger_with_socket(
         socketio=socketio,
         hdf5_filename=hdf5_filename,
@@ -95,9 +103,7 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
 # Define Flask routes for UI and control
 @app.route("/")
 def index():
-    # Display main page with current state, uploaded files, and saved logs
     filenames = list(session.get('uploaded_paths', {}).keys())
-
     printer_ip = session.get('printer_ip')
     camera_url = session.get('camera_url')
     printer_error = session.pop('printer_error', '')
@@ -119,6 +125,9 @@ def index():
         remaining_time=remaining_time,
         selected_file=selected_file
     )
+
+# ... rest of routes unchanged ...
+
 
 @app.route("/set-printer", methods=["POST"])
 def set_printer():
@@ -269,6 +278,3 @@ def download_hdf5():
         max_age=0
     )
 
-if __name__ == "__main__":
-    # Run the SocketIO app for real-time updates, debug enabled 1
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

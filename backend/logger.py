@@ -1,10 +1,11 @@
+# /backend/logger
 import requests  # HTTP client
 import h5py  # HDF5 file handling
 import time  # Timing loops
 import numpy as np  # Numerical arrays
 from datetime import datetime  # Timestamps
 import concurrent.futures  # Thread pool for parallel queries
-from extract_snapshots import PrinterSnapshotter
+from backend.extract_snapshots import PrinterSnapshotter
 
 
 # Global control flag for the logger loop

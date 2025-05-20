@@ -1,3 +1,4 @@
+# /backend/filter_endpoints.py
 def filterMask(bit_sequence):
     endpoints = {
         "head_pos": "/heads/0/position",
