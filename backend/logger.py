@@ -213,14 +213,6 @@ def run_logger_with_socket(socketio, hdf5_filename, base_url, camera_url, endpoi
                         bed_info = results.get("bed_temp", {})
                         endpoint_data["Bed Temp"] = convert_to_float(bed_info.get("current", 0))
 
-                    if sequence[2] == '1':
-                        endpoint_data["currentTemp"] = convert_to_float(results.get("nozzle_temp_current", 0))
-
-                    if sequence[8] == '1':
-                        endpoint_data["Jerk"] = convert_to_float(results.get("jerk", 0))
-
-                    if sequence[9] == '1':
-                        endpoint_data["ActiveMaterial"] = convert_to_float(results.get("active_material", 0))
 
                     log_entry = {
                         'scan': scannum,
