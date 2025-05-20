@@ -1,1 +1,0 @@
-from simulator.backend.app.domain.models.printer_data_gen import PrinterDataGenerator
