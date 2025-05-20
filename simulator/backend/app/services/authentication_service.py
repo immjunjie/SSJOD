@@ -1,5 +1,5 @@
-from simulator.swagger.generators.authentication_gen import AuthDataGenerator
 from pydantic import BaseModel
+from simulator.backend.app.domain.models.authentication_gen import AuthDataGenerator
 
 class AuthResponse(BaseModel):
     message: str
