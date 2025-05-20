@@ -1,6 +1,6 @@
-from backend.simulator.base.apis.base_api import BaseAPI
-from backend.simulator.cluster.apis.endpoints import print_jobs, system
-from backend.simulator.cluster.apis.endpoints import setting, materials, debug, cloud, printers
+from simulator.base.apis.base_api import BaseAPI
+from simulator.cluster.apis.endpoints import print_jobs, system
+from simulator.cluster.apis.endpoints import setting, materials, debug, cloud, printers
 
 
 class ClusterAPI(BaseAPI):

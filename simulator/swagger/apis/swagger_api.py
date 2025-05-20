@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
-from backend.simulator.base.apis.base_api import BaseAPI
-from backend.simulator.swagger.apis.endpoints import (
+from simulator.base.apis.base_api import BaseAPI
+from simulator.swagger.apis.endpoints import (
     air_manager, ambient_temperature, camera, network, printer, system, authentication, materials, print_job, history
 )
 import logging

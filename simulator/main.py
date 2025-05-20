@@ -2,14 +2,14 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from starlette.responses import HTMLResponse
 
-from backend.simulator.cluster.apis.cluster_api import ClusterAPI
-from backend.simulator.swagger.apis.swagger_api import SwaggerAPI
+from simulator.cluster.apis.cluster_api import ClusterAPI
+from simulator.swagger.apis.swagger_api import SwaggerAPI
 import logging
 import sys
 from pathlib import Path
 
 # Add the project root directory to the Python path
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 # ========================================================
@@ -105,14 +105,14 @@ async def root_redirect():
     Returns:
         RedirectResponse: HTTP redirect to the Swagger UI documentation
     """
-    redirect_url = "/docs/api/"  # Redirect to documentation path
+    redirect_url = "/docs/printer"  # Redirect to documentation path
     logger.info(f"Root access detected, redirecting to {redirect_url}")
     return RedirectResponse(url=redirect_url)
 
 @app.get("/docs/printer")
 async def printer_docs():
     """
-    做一个欢迎html页面
+    Welcome page for the Ultimaker Printer Simulator
     """
     html = """
     <!DOCTYPE html>
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "backend.simulator.main:app",
+        "simulator.main:app",
         host="127.0.0.1",
         port=8000,
         reload=True

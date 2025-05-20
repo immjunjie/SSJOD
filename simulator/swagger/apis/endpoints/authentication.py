@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
-from backend.simulator.swagger.services.authentication_service import AuthDataGenerator
+from simulator.swagger.services.authentication_service import AuthDataGenerator
 
 router = APIRouter()
 

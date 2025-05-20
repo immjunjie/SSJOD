@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from starlette.testclient import TestClient
-from backend.simulator.swagger.services.printer_service import PrinterService
+from simulator.swagger.services.printer_service import PrinterService
 
 router = APIRouter()
 

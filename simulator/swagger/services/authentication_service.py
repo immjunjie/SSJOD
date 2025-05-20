@@ -1,4 +1,4 @@
-from backend.simulator.swagger.generators.authentication_gen import AuthDataGenerator
+from simulator.swagger.generators.authentication_gen import AuthDataGenerator
 from pydantic import BaseModel
 
 class AuthResponse(BaseModel):
