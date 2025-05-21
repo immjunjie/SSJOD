@@ -1,280 +1,285 @@
-# /backend/app.py
-import os  # Filesystem operations
-import re  # Regex cleaning
-import threading  # Background threads for non-blocking logging
-import requests  # HTTP client for printer API
-from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file
-from flask_socketio import SocketIO  # WebSocket support for real-time updates
+import os
+import threading
+import requests
+from flask import (
+    Flask, render_template, redirect,
+    url_for, request, jsonify, session, send_file
+)
+from flask_socketio import SocketIO
 
-from . import logger  # Custom logger module
-from .filter_endpoints import filterMask  # Function to filter endpoints based on user selection
+from backend.extractor import run_extraction  # <-- your standalone extractor CLI logic
 
-# List of telemetry endpoints to choose from
-listOfEndpoints = [
-    "Head Position",
-    "Bed Temperature",
-    "Nozzle_temp_current",
-    "Nozzle_temp_target",
-    "Time_spent_hot",
-    "Status",
-    "Material Extruded",
-    "Led",
-    "Jerk",
-    "Active Material",
-    "Remaining Length",
-    "Max Speed",
-    "Screenshots"
-]
+# —————————————————————————————————————————————————————————————
+# Configuration & Flask app init
+# —————————————————————————————————————————————————————————————
 
-# Bitstring representing which endpoints are currently enabled (default: all on)
-current_sequence = "1" * len(listOfEndpoints)
-
-# Compute paths for templates and static assets (frontend folder is sibling to backend)
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+BASE_DIR     = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'frontend', 'templates')
-STATIC_DIR = os.path.join(BASE_DIR, 'frontend', 'static')
+STATIC_DIR   = os.path.join(BASE_DIR, 'frontend', 'static')
 
-# Initialize Flask app and SocketIO with custom folders
-app = Flask(__name__,
-            template_folder=TEMPLATE_DIR,
-            static_folder=STATIC_DIR,
-            static_url_path='/static')
-app.secret_key = 'dojossjod'  # Session encryption key
-socketio = SocketIO(app)
+app = Flask(
+    __name__,
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
+    static_url_path='/static'
+)
+app.secret_key = 'dojossjod'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Global variables for logging thread control
-log_thread = None
-is_logging = False
-
-# Configure upload and detail storage folders
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+# Ensure these folders exist
+UPLOAD_FOLDER  = os.path.join(BASE_DIR, 'uploads')
 DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER,  exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Telemetry labels and default bit-mask
+listOfEndpoints  = [
+    "Head Position", 
+    "Bed Temperature", 
+    "Nozzle_temp_current", 
+    "Nozzle_temp_target",
+    "Time_spent_hot", 
+    "Status", 
+    "Material Extruded", 
+    "Led",
+    "Jerk", 
+    "Active Material", 
+    "Remaining Length", 
+    "Max Speed", 
+    "Screenshots"
+]
+current_sequence = "1" * len(listOfEndpoints)
 
-def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10):
-    # Prepare file paths and HDF5 filename
-    gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
-    stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
+log_thread  = None
+is_logging  = False
 
-    if not (gcode_path and stl_path and printer_ip):
-        print("Missing G-code, STL file, or printer IP.")
-        return
+# —————————————————————————————————————————————————————————————
+# Helper to launch the extractor in a background thread
+# —————————————————————————————————————————————————————————————
 
-    # Determine HDF5 filename (either selected or auto-incremented)
-    if selected_filename and selected_filename != "New":
-        hdf5_filename = os.path.join(DETAILS_FOLDER, selected_filename)
-    else:
-        existing = [f for f in os.listdir(DETAILS_FOLDER) if f.startswith("print_details_") and f.endswith(".hdf5")]
-        indices = [int(f.split("_")[-1].split(".")[0]) for f in existing if f.split("_")[-1].split(".")[0].isdigit()]
-        next_index = max(indices) + 1 if indices else 0
-        hdf5_filename = os.path.join(DETAILS_FOLDER, f"print_details_{next_index}.hdf5")
-
-    # Verify printer connectivity
-    test_url = f"http://{printer_ip}/api/v1/printer"
-    camera_url = f"http://{printer_ip}/api/v1/camera"
+def _bridge_extraction(
+    printer_ip: str,
+    gcode_path: str,
+    stl_path: str,
+    hdf5_filename: str,
+    sequence_bits: str,
+    duration: float,
+    delay: float
+):
+    """
+    Calls your extractor.run_extraction and, as each scan is done,
+    the extractor should emit `new_log` events itself (it can be passed
+    the socketio object if needed).  When finished, emit `logging_stopped`.
+    """
     try:
-        response = requests.get(test_url, timeout=2)
-        if response.status_code != 200:
-            print(f"Printer at {printer_ip} responded with status {response.status_code}. Aborting logger.")
-            return
-    except requests.RequestException as e:
-        print(f"Could not reach printer at {printer_ip}: {e}")
-        return
-
-    # Launch logger in current thread (logger handles its own loop)
-    global is_logging
-    is_logging = True
-    logger.run_logger_with_socket(
-        socketio=socketio,
-        hdf5_filename=hdf5_filename,
-        base_url=test_url,
-        camera_url=camera_url,
-        endpoints=filterMask(sequence),
-        sequence=sequence,
-        stl_path=stl_path,
-        gcode_path=gcode_path,
-        max_duration=duration_seconds
-    )
+        run_extraction(
+            printer_ip=printer_ip,
+            stl_path=stl_path,
+            gcode_path=gcode_path,
+            output_hdf5=hdf5_filename,
+            sequence_bits=sequence_bits,
+            max_duration=duration,
+            delay_sec=delay,
+            socketio=socketio
+        )
+    finally:
+        socketio.emit('logging_stopped')
 
 
-# Define Flask routes for UI and control
+# —————————————————————————————————————————————————————————————
+# Flask routes
+# —————————————————————————————————————————————————————————————
+
 @app.route("/")
 def index():
-    filenames = list(session.get('uploaded_paths', {}).keys())
-    printer_ip = session.get('printer_ip')
-    camera_url = session.get('camera_url')
+    filenames     = list(session.get('uploaded_paths', {}).keys())
+    printer_ip    = session.get('printer_ip')
     printer_error = session.pop('printer_error', '')
-    remaining_time = session.get('remaining_time')
+    remaining     = session.get('remaining_time')
 
-    existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5'))
-    selected_file = session.get('selected_hdf5_file', 'New')
+    existing = ["New"] + sorted(
+        fname for fname in os.listdir(DETAILS_FOLDER) if fname.endswith(".hdf5")
+    )
+    selected = session.get('selected_hdf5_file', 'New')
 
     return render_template(
         "index.html",
         logging=is_logging,
         filenames=filenames,
         printer_ip=printer_ip,
-        camera_url=camera_url,
         printer_error=printer_error,
         listOfEndpoints=listOfEndpoints,
         sequence=current_sequence,
-        existing_files=existing_files,
-        remaining_time=remaining_time,
-        selected_file=selected_file
+        existing_files=existing,
+        remaining_time=remaining,
+        selected_file=selected,
+        # persist UI fields
+        hours=session.get('hours', ''),
+        minutes=session.get('minutes', ''),
+        seconds=session.get('seconds', ''),
+        unlimited_duration=session.get('unlimited_duration', False),
+        delay_seconds=session.get('delay_seconds', '')
     )
-
-# ... rest of routes unchanged ...
 
 
 @app.route("/set-printer", methods=["POST"])
 def set_printer():
-    # Save printer IP after validating printer API docs endpoint
-    ip = request.form.get('printer_ip')
-    camera_url = request.form.get('camera_url')
-
+    ip  = request.form.get('printer_ip')
+    cam = request.form.get('camera_url')
     if ip:
         try:
             resp = requests.get(f"http://{ip}/docs/printer", timeout=2)
             if resp.status_code == 200:
-                session['printer_ip'] = ip
+                session['printer_ip']    = ip
+                session['camera_url']    = cam or None
                 session['printer_error'] = ''
-
-                #Store camera URL
-                if camera_url:
-                    session['camera_url'] = camera_url
-                else:
-                    #Remove camera_url from session if field is empty
-                    session.pop('camera_url', None)
             else:
                 session['printer_error'] = "Printer did not respond correctly."
         except requests.RequestException:
             session['printer_error'] = "Failed to connect to printer."
     return redirect(url_for('index'))
 
-@app.route("/start", methods=['GET', 'POST'])
+
+@app.route("/start", methods=["POST"])
 def start():
-    # Parse form, start background logging thread if not already running
     global log_thread, is_logging, current_sequence
-    uploaded_paths = session.get('uploaded_paths', {})
-    camera_url = session.get('camera_url')
 
-    selected_filename = request.form.get('existing_file', 'New')
-    session['selected_hdf5_file'] = selected_filename
+    # persist form fields
+    session['hours']              = request.form.get('hours', '')
+    session['minutes']            = request.form.get('minutes', '')
+    session['seconds']            = request.form.get('seconds', '')
+    session['unlimited_duration'] = bool(request.form.get('unlimited_duration'))
+    session['delay_seconds']      = request.form.get('delay_seconds', '')
+    session['selected_hdf5_file'] = request.form.get('existing_file', 'New')
 
-    # Build bitstring for enabled endpoints
-    sequence = "".join(
+    # assemble parameters
+    uploaded = session.get('uploaded_paths', {})
+    sequence_bits = "".join(
         '1' if f"ep{i}" in request.form else '0'
         for i in range(len(listOfEndpoints))
     )
-    current_sequence = sequence
+    current_sequence = sequence_bits
 
-    gcode_exists = any(n.endswith('.gcode') for n in uploaded_paths)
-    stl_exists = any(n.endswith('.stl') for n in uploaded_paths)
+    # ensure we have both G-code and STL
+    has_g = any(name.endswith('.gcode') for name in uploaded)
+    has_s = any(name.endswith('.stl')   for name in uploaded)
+    if is_logging or not (has_g and has_s):
+        return redirect(url_for('index'))
 
-    if not is_logging and gcode_exists and stl_exists:
-        printer_ip = session.get('printer_ip')
-        if request.form.get("unlimited_duration"):
-            duration_seconds = None  # or some sentinel like 0
-        else:
-            try:
-                h = int(request.form.get("hours", 0) or 0)
-                m = int(request.form.get("minutes", 0) or 0)
-                s = int(request.form.get("seconds", 0) or 0)
-            except ValueError:
-                session['printer_error'] = "Invalid time format. Please enter numbers."
-                return redirect(url_for("index"))
-            duration_seconds = h * 3600 + m * 60 + s
+    ip = session.get('printer_ip')
+    if not ip:
+        session['printer_error'] = "Set printer IP first."
+        return redirect(url_for('index'))
 
-        def run_and_reset():
-            global is_logging
-            try:
-                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
-            finally:
-                is_logging = False
-                logger.stop_logger()
-                socketio.emit('logging_stopped')
-        if duration_seconds and duration_seconds <= 0:
-            session['printer_error'] = "Logging duration must be greater than zero."
-            session.pop('remaining_time', None)
-            return redirect(url_for("index"))
-        log_thread = threading.Thread(target=run_and_reset)
-        log_thread.start()
-        is_logging = True
+    # compute durations
+    if request.form.get("unlimited_duration"):
+        duration = None
+    else:
+        try:
+            h = int(request.form.get("hours") or 0)
+            m = int(request.form.get("minutes") or 0)
+            s = int(request.form.get("seconds") or 0)
+        except ValueError:
+            session['printer_error'] = "Invalid time format."
+            return redirect(url_for('index'))
+        duration = h*3600 + m*60 + s
+        if duration <= 0:
+            session['printer_error'] = "Duration must be > 0."
+            return redirect(url_for('index'))
 
-        session['remaining_time'] = duration_seconds
-    return redirect(url_for("index"))
+    # parse delay
+    try:
+        delay = float(request.form.get('delay_seconds') or 0.0)
+    except ValueError:
+        delay = 0.0
+
+    # choose HDF5 filename
+    sel = session['selected_hdf5_file']
+    if sel != "New":
+        hdf5_fn = os.path.join(DETAILS_FOLDER, sel)
+    else:
+        existing = [
+            f for f in os.listdir(DETAILS_FOLDER)
+            if f.startswith("print_details_") and f.endswith(".hdf5")
+        ]
+        idxs = [int(f.split("_")[-1].split(".")[0]) for f in existing]
+        nxt = max(idxs)+1 if idxs else 0
+        hdf5_fn = os.path.join(DETAILS_FOLDER, f"print_details_{nxt}.hdf5")
+
+    # pick paths
+    gcode_path = next(p for n,p in uploaded.items() if n.endswith('.gcode'))
+    stl_path   = next(p for n,p in uploaded.items() if n.endswith('.stl'))
+
+    # spawn the bridge
+    def runner():
+        global is_logging
+        try:
+            _bridge_extraction(
+                ip, gcode_path, stl_path, hdf5_fn,
+                sequence_bits, duration, delay
+            )
+        finally:
+            is_logging = False
+
+    log_thread = threading.Thread(target=runner, daemon=True)
+    log_thread.start()
+    is_logging = True
+    session['remaining_time'] = duration
+
+    return redirect(url_for('index'))
+
 
 @app.route("/stop")
 def stop():
-    # Stop logging and join thread
     global is_logging, log_thread
     is_logging = False
-    logger.stop_logger()
+    # tell extractor to die
+    from backend.extractor import stop_extraction
+    stop_extraction()
     if log_thread:
-        log_thread.join()
-    return redirect(url_for("index"))
+        log_thread.join(timeout=1)
+    return redirect(url_for('index'))
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    # Handle G-code/STL file uploads via AJAX
-    uploaded_paths = session.get('uploaded_paths', {})
-    responses = {}
+    uploaded = session.get('uploaded_paths', {})
+    resp = {}
+    for fn, file in request.files.items():
+        path = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(path)
+        uploaded[fn] = path
+        resp[fn] = "uploaded"
+    session['uploaded_paths'] = uploaded
+    return jsonify(status="success", files=resp)
 
-    for filename in request.files:
-        file = request.files[filename]
-        if file:
-            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-            file.save(file_path)
-            uploaded_paths[filename] = file_path
-            responses[filename] = "uploaded"
-
-    session['uploaded_paths'] = uploaded_paths
-    return jsonify(status="success", files=responses)
 
 @app.route("/uploaded-files")
-def get_uploaded_files():
-    # Return JSON of currently uploaded filenames
-    uploaded_paths = session.get('uploaded_paths', {})
-    return jsonify(files=list(uploaded_paths.keys()))
+def uploaded_files():
+    return jsonify(files=list(session.get('uploaded_paths', {}).keys()))
+
 
 @app.route('/delete-file/<filename>', methods=['POST'])
 def delete_file(filename):
-    # Remove file from session and filesystem
-    uploaded_paths = session.get('uploaded_paths', {})
-    if filename in uploaded_paths:
-        file_path = uploaded_paths.pop(filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    session['uploaded_paths'] = uploaded_paths
+    uploaded = session.get('uploaded_paths', {})
+    if filename in uploaded:
+        try:
+            os.remove(uploaded.pop(filename))
+        except OSError:
+            pass
+    session['uploaded_paths'] = uploaded
     return jsonify(success=True)
 
+
 @app.route('/download', methods=['POST'])
-def download_hdf5():
-    selected_file = request.form.get("selected_file", "").strip()
-    custom_name = request.form.get("custom_name", "").strip()
+def download():
+    sel = request.form.get("selected_file","")
+    custom = request.form.get("custom_name","")
+    if not sel or not custom:
+        return render_template("index.html", downloadBoxError="Select file + name")
+    # sanitize …
+    src = os.path.join(DETAILS_FOLDER, sel)
+    return send_file(src, as_attachment=True, download_name=custom, mimetype='application/octet-stream')
 
-    if not selected_file or not custom_name:
-        return render_template("index.html", downloadBoxError="Please select a file and enter a name.")
-
-    selected_file = re.sub(r'[^\w\-_.]', '_', selected_file)
-    custom_name = re.sub(r'[^\w\-_.]', '_', custom_name)
-
-    if not custom_name.endswith(".hdf5"):
-        custom_name += ".hdf5"
-
-    hdf5_path = os.path.abspath(os.path.join(DETAILS_FOLDER, selected_file))
-
-    if not os.path.exists(hdf5_path):
-        return render_template("index.html", downloadBoxError="Selected HDF5 file does not exist.")
-
-    return send_file(
-        hdf5_path,
-        as_attachment=True,
-        download_name=custom_name,
-        mimetype='application/octet-stream',
-        max_age=0
-    )
 
