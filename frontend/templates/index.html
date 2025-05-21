@@ -43,34 +43,34 @@
 
       <form action="{{ url_for('start') }}" method="post" onsubmit="return validateForm();">
         <br>
-        <div class="duration-wrapper">
-          <label for="durationInputGroup">Time Limit:</label>
-          <div class="duration-input" id="durationInputGroup">
-            <input type="number" name="hours"   min="0"     placeholder="HH" value="{{ hours }}">
-            <span>:</span>
-            <input type="number" name="minutes" min="0" max="59" placeholder="MM" value="{{ minutes }}">
-            <span>:</span>
-            <input type="number" name="seconds" min="0" max="59" placeholder="SS" value="{{ seconds }}">
-          </div>
-          <label class="duration-checkbox">
-            <input type="checkbox" id="unlimitedDuration"
-                   name="unlimited_duration"
-                   {% if unlimited_duration %}checked{% endif %}>
-            None
-          </label>
-          <label for="delay">Inter‐scan delay (s):</label>
-          <div class="delay-input" id="delayInputGroup">
-            <input type="number"
-                   name="delay_seconds"
-                   step="0.1"
-                   min="0"
-                   placeholder="e.g. 1.2"
-                   value="{{ delay_seconds }}">
-          </div>
-            <div class="error-message" id="duration-error"></div>
-        </div>
+            <div class="duration-wrapper">
+                <label for="durationInputGroup">Time Limit:</label>
+                <div class="duration-input" id="durationInputGroup">
+                  <input type="number" name="hours"   min="0"     placeholder="HH" value="{{ hours }}">
+                  <span>:</span>
+                  <input type="number" name="minutes" min="0" max="59" placeholder="MM" value="{{ minutes }}">
+                  <span>:</span>
+                  <input type="number" name="seconds" min="0" max="59" placeholder="SS" value="{{ seconds }}">
+                </div>
+                <label class="duration-checkbox">
+                  <input type="checkbox" id="unlimitedDuration"
+                         name="unlimited_duration"
+                         {% if unlimited_duration %}checked{% endif %}>
+                  None
+                </label>
+                <div class="delay-input" id="delayInputGroup">
+                  <input type="number"
+                         name="delay_seconds"
+                         step="0.1"
+                         min="0"
+                         placeholder="e.g. 1.2"
+                         value="{{ delay_seconds }}">
+                </div>
+                <div class="error-message" id="duration-error"></div>
+            </div>
+            
 
-        <label for="existing_file">Select log file:</label>
+        <label for="existing_file">Select log file (to overwrite):</label>
         <select name="existing_file" id="existing_file">
           {% for file in existing_files %}
             <option value="{{ file }}" {% if file==selected_file %}selected{% endif %}>

@@ -19,6 +19,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   durationInputGroup.style.display = checkbox.checked ? 'none' : 'flex';
 
+  durationInputGroup.style.display = checkbox.checked ? "none" : "flex";
   checkbox.addEventListener("change", function () {
     durationInputGroup.style.display = this.checked ? "none" : "flex";
   });
