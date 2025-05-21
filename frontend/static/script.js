@@ -14,7 +14,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // timer input, no limit button
   const checkbox = document.getElementById("unlimitedDuration");
-  const durationInputGroup = document.querySelector(".duration-input");
+  const durationInputGroup = document.getElementById("durationInputGroup");
+  const delayInputGroup    = document.getElementById("delayInputGroup");
+
+  durationInputGroup.style.display = checkbox.checked ? 'none' : 'flex';
 
   checkbox.addEventListener("change", function () {
     durationInputGroup.style.display = this.checked ? "none" : "flex";
@@ -43,7 +46,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
     logs.push(logEntry);
-    if (logs.length > 500) logs.shift(); // Keep max 500
+    if (logs.length > 500) logs.shift(); // Keep max 500 logs
     localStorage.setItem('printerLogs', JSON.stringify(logs));
 
     const p = document.createElement('p');

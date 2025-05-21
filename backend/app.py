@@ -54,7 +54,7 @@ os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10):
+def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds=10, delay_seconds=0.0):
     # Prepare file paths and HDF5 filename
     gcode_path = next((p for n, p in uploaded_paths.items() if n.endswith('.gcode')), None)
     stl_path = next((p for n, p in uploaded_paths.items() if n.endswith('.stl')), None)
@@ -96,34 +96,31 @@ def start_logging(sequence, uploaded_paths, printer_ip, selected_filename, durat
         sequence=sequence,
         stl_path=stl_path,
         gcode_path=gcode_path,
-        max_duration=duration_seconds
+        max_duration=duration_seconds,
+        delay_seconds=delay_seconds
     )
 
 
 # Define Flask routes for UI and control
 @app.route("/")
 def index():
-    filenames = list(session.get('uploaded_paths', {}).keys())
-    printer_ip = session.get('printer_ip')
-    camera_url = session.get('camera_url')
-    printer_error = session.pop('printer_error', '')
-    remaining_time = session.get('remaining_time')
-
-    existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5'))
-    selected_file = session.get('selected_hdf5_file', 'New')
-
     return render_template(
         "index.html",
         logging=is_logging,
-        filenames=filenames,
-        printer_ip=printer_ip,
-        camera_url=camera_url,
-        printer_error=printer_error,
+        filenames = list(session.get('uploaded_paths', {}).keys()),
+        printer_ip = session.get('printer_ip'),
+        camera_url = session.get('camera_url'),
+        printer_error = session.pop('printer_error', ''),
         listOfEndpoints=listOfEndpoints,
         sequence=current_sequence,
-        existing_files=existing_files,
-        remaining_time=remaining_time,
-        selected_file=selected_file
+        existing_files = ["New"] + sorted(f for f in os.listdir(DETAILS_FOLDER) if f.endswith('.hdf5')),
+        remaining_time = session.get('remaining_time'),
+        hours=session.get('hours', ''),
+        minutes=session.get('minutes', ''),
+        seconds=session.get('seconds', ''),
+        unlimited_duration=session.get('unlimited_duration', False),
+        delay_seconds=session.get('delay_seconds', ''),
+        selected_file = session.get('selected_hdf5_file', 'New')
     )
 
 # ... rest of routes unchanged ...
@@ -159,8 +156,11 @@ def start():
     # Parse form, start background logging thread if not already running
     global log_thread, is_logging, current_sequence
     uploaded_paths = session.get('uploaded_paths', {})
-    camera_url = session.get('camera_url')
-
+    session['hours']             = request.form.get('hours', '')
+    session['minutes']           = request.form.get('minutes', '')
+    session['seconds']           = request.form.get('seconds', '')
+    session['unlimited_duration']= bool(request.form.get('unlimited_duration'))
+    session['delay_seconds'] = request.form.get('delay_seconds', '')
     selected_filename = request.form.get('existing_file', 'New')
     session['selected_hdf5_file'] = selected_filename
 
@@ -188,10 +188,15 @@ def start():
                 return redirect(url_for("index"))
             duration_seconds = h * 3600 + m * 60 + s
 
+        try:
+            delay_sec = float(session.get('delay_seconds') or 0)
+        except ValueError:
+            delay_sec = 0.0
+
         def run_and_reset():
             global is_logging
             try:
-                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds)
+                start_logging(sequence, uploaded_paths, printer_ip, selected_filename, duration_seconds, delay_seconds=delay_sec)
             finally:
                 is_logging = False
                 logger.stop_logger()
