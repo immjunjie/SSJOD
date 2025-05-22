@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.responses import HTMLResponse
 from fastapi.responses import RedirectResponse
-from simulator.v2.backend.app.api.v1.endpoints import printer
+from simulator.v2.backend.app.api.endpoints import printer
 import logging
 import sys
 from pathlib import Path
@@ -24,7 +24,7 @@ except Exception as e:
     logger.error(f"API mounting failed: {e}")
     raise
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root_redirect():
     """
     Root endpoint that redirects to the API documentation
@@ -33,7 +33,7 @@ async def root_redirect():
     logger.info(f"Root access detected, redirecting to {redirect_url}")
     return RedirectResponse(url=redirect_url)
 
-@app.get("/docs/printer")
+@app.get("/docs/printer", include_in_schema=False)
 async def printer_docs():
     """
     Welcome page for the Ultimaker Printer Simulator

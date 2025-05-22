@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from simulator.v2.backend.app.services.printer_service import PrinterService
-from simulator.v2.backend.app.api.v1.schemas import (
+from simulator.v2.backend.app.api.schemas import (
     PrinterResponse, BedResponse, HeadResponse, LedResponse, NetworkResponse,
     PreHeatResponse, TemperatureResponse, MaterialResponse, FeederResponse,
     OffsetResponse, StatisticsResponse, HotendResponse, ExtruderResponse,
