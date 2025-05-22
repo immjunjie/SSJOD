@@ -1,59 +1,35 @@
-# main.py
 from fastapi import FastAPI
 from starlette.responses import HTMLResponse
-
-from simulator.v2.backend.app.api.v1.endpoints import printers
 from fastapi.responses import RedirectResponse
+from simulator.v2.backend.app.api.v1.endpoints import printer
 import logging
+import sys
+from pathlib import Path
+
+# Add project root to Python path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 # Configure basic logging settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
-# app.include_router(printers.router, prefix="/api/v1/printers" )
-
+app = FastAPI(title="Ultimaker Printer Simulator", docs_url="/docs/api", redoc_url=None)
 
 try:
-    # Mount API endpoints (without docs)
-    app.include_router(printers.router, prefix="/api/v1/printers")
-    logger.info("API endpoints mounted successfully at /api/v1/printers")
-
-    # Initialize Swagger API for documentation only
-    swagger_docs = FastAPI(
-        title="Ultimaker API - Swagger - Simulator",
-        description=app.description if hasattr(app, "description") else "",
-        openapi_tags=app.openapi_tags if hasattr(app, "openapi_tags") else [],
-        docs_url="/",
-        redoc_url="/redoc"
-    )
-    # Customize OpenAPI schema to include /api/v1/ prefix
-    original_openapi = app.openapi()
-    modified_openapi = {
-        **original_openapi,
-        "paths": {
-            f"/api/v1{path}": details for path, details in original_openapi["paths"].items()
-        }
-    }
-    swagger_docs.openapi = lambda: modified_openapi  # Set custom OpenAPI schema
-    app.mount("/docs/api", swagger_docs)
-    logger.info("SwaggerAPI documentation mounted successfully at /docs/api")
-    logger.info("SwaggerAPI documentation mounted successfully at /docs/api")
+    # Mount API endpoints with /api/v1 prefix
+    app.include_router(printer.router, prefix="/api/v1")
+    logger.info(f"API endpoints mounted successfully at /api/v1: {[route.path for route in app.routes if '/api/v1' in route.path]}")
 
 except Exception as e:
     logger.error(f"API mounting failed: {e}")
     raise
 
-
 @app.get("/")
 async def root_redirect():
     """
     Root endpoint that redirects to the API documentation
-
-    Returns:
-        RedirectResponse: HTTP redirect to the Swagger UI documentation
     """
-    redirect_url = "/docs/printer"  # Redirect to documentation path
+    redirect_url = "/docs/printer"
     logger.info(f"Root access detected, redirecting to {redirect_url}")
     return RedirectResponse(url=redirect_url)
 
@@ -102,9 +78,10 @@ async def printer_docs():
     </head>
     <body>
         <div class="container">
-            <h1>Welcome to the Ultimaker Printer Simulator_v1</h1>
+            <h1>Welcome to the Ultimaker Printer Simulator_v2</h1>
             <p>This simulator mimics the behavior of an Ultimaker printer.</p>
-            <p>You can access the API documentation at <a href="/docs/api">/docs/api</a></p>
+            <p>Access the API documentation at <a href="/docs/api">/docs/api</a></p>
+            <p>Test the API at <a href="/api/v1/printer">/api/v1/printer</a></p>
         </div>
     </body>
     </html>
