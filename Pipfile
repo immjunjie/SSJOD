@@ -13,6 +13,8 @@ numpy = "*"
 beautifulsoup4 = "*"
 bs4 = "*"
 httpx = "*"
+pytest = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 
