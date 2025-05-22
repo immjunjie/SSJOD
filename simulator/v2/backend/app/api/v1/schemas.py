@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Literal
 
 class PreHeatResponse(BaseModel):
     active: bool
@@ -101,3 +101,9 @@ class PrinterResponse(BaseModel):
     network: NetworkResponse
     status: str
     validate_header: Dict[str, Any]
+
+class StatusRequest(BaseModel):
+    status: Literal["printing", "idle"]
+
+class StatusResponse(BaseModel):
+    status: str

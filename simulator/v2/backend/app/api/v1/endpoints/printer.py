@@ -4,7 +4,8 @@ from simulator.v2.backend.app.api.v1.schemas import (
     PrinterResponse, BedResponse, HeadResponse, LedResponse, NetworkResponse,
     PreHeatResponse, TemperatureResponse, MaterialResponse, FeederResponse,
     OffsetResponse, StatisticsResponse, HotendResponse, ExtruderResponse,
-    JerkResponse, MaxSpeedResponse, PositionResponse, EthernetResponse, WifiResponse
+    JerkResponse, MaxSpeedResponse, PositionResponse, EthernetResponse, WifiResponse,
+    StatusRequest, StatusResponse
 )
 import logging
 
@@ -12,9 +13,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Create a global PrinterService instance
+_printer_service = PrinterService()
+
 async def get_printer_service():
-    logger.debug("Creating PrinterService instance")
-    return PrinterService()
+    logger.debug("Returning global PrinterService instance")
+    return _printer_service
 
 @router.get("/printer", response_model=PrinterResponse)
 async def get_printer(printer_service: PrinterService = Depends(get_printer_service)):
@@ -100,4 +104,30 @@ async def get_printer(printer_service: PrinterService = Depends(get_printer_serv
         )
     except Exception as e:
         logger.error(f"Error fetching printer: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/printer/status", response_model=StatusResponse)
+async def set_printer_status(
+    status_request: StatusRequest,
+    printer_service: PrinterService = Depends(get_printer_service)
+):
+    logger.info(f"Handling POST /api/v1/printer/status request with status: {status_request.status}")
+    try:
+        await printer_service.set_printer_status(status_request.status)
+        return StatusResponse(status=status_request.status)
+    except ValueError as e:
+        logger.error(f"Invalid status: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error setting printer status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/printer/status", response_model=StatusResponse)
+async def get_printer_status(printer_service: PrinterService = Depends(get_printer_service)):
+    logger.info("Handling GET /api/v1/printer/status request")
+    try:
+        status = await printer_service.get_printer_status()
+        return StatusResponse(status=status)
+    except Exception as e:
+        logger.error(f"Error fetching printer status: {e}")
         raise HTTPException(status_code=500, detail=str(e))

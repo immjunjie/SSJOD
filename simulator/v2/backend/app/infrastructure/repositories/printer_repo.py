@@ -1,8 +1,12 @@
-from simulator.v2.backend.app.domain.models import Printer, Bed, Temperature, Head, Extruder, ActiveMaterial, Feeder, Hotend, HotendOffset, HotendStatistics, Led, Network
+from simulator.v2.backend.app.domain.models import Printer, Bed, Temperature, Head, Extruder, Hotend, HotendOffset, HotendStatistics, ActiveMaterial, Feeder, Led, Network
+from typing import Dict, List, Any
+import logging
 
-class InMemoryPrinterRepository:
+logger = logging.getLogger(__name__)
+
+class PrinterRepository:
     def __init__(self):
-        self._printer = Printer(
+        self.printer = Printer(
             bed=Bed(
                 pre_heat={"active": False},
                 temperature=Temperature(current=24.7, target=0),
@@ -28,7 +32,7 @@ class InMemoryPrinterRepository:
                                     prints_since_cleaned="46",
                                     time_spent_hot=278760
                                 ),
-                                temperature=Temperature(current=24.7, target=0)
+                                temperature=Temperature(current=20.0, target=0)
                             )
                         ),
                         Extruder(
@@ -46,7 +50,7 @@ class InMemoryPrinterRepository:
                                     prints_since_cleaned="16",
                                     time_spent_hot=47580
                                 ),
-                                temperature=Temperature(current=24.5, target=0)
+                                temperature=Temperature(current=20.0, target=0)
                             )
                         )
                     ],
@@ -67,4 +71,13 @@ class InMemoryPrinterRepository:
         )
 
     async def get(self) -> Printer:
-        return self._printer
+        logger.info("Fetching printer from repository")
+        return self.printer
+
+    async def set_status(self, status: str) -> None:
+        logger.info(f"Updating printer status to: {status}")
+        self.printer.status = status
+
+    async def get_status(self) -> str:
+        logger.info("Fetching printer status from repository")
+        return self.printer.status
