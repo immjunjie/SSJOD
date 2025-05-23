@@ -25,7 +25,7 @@ class SwaggerAPI(BaseAPI):
         super().__init__(
             docs_url=docs_url,
             redoc_url=redoc_url,
-            title="Ultimaker API - Swagger - Simulator",
+            title="Ultimaker API - Swagger - Simulator v1",
             openapi_tags=self.tags_metadata,
             description="""REST API for the Ultimaker 3D printer.
 
