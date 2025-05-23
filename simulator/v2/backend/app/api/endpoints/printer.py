@@ -20,7 +20,7 @@ async def get_printer_service():
     logger.debug("Returning global PrinterService instance")
     return _printer_service
 
-@router.get("/printer", response_model=PrinterResponse)
+@router.get("/printer", response_model=PrinterResponse, tags=["Printer"])
 async def get_printer(printer_service: PrinterService = Depends(get_printer_service)):
     logger.info("Handling GET /api/v1/printer request")
     try:
@@ -106,7 +106,7 @@ async def get_printer(printer_service: PrinterService = Depends(get_printer_serv
         logger.error(f"Error fetching printer: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/printer/status", response_model=StatusResponse)
+@router.post("/printer/status", response_model=StatusResponse, tags=["Printer"])
 async def set_printer_status(
     status_request: StatusRequest,
     printer_service: PrinterService = Depends(get_printer_service)
@@ -122,7 +122,7 @@ async def set_printer_status(
         logger.error(f"Error setting printer status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/printer/status", response_model=StatusResponse)
+@router.get("/printer/status", response_model=StatusResponse, tags=["Printer"])
 async def get_printer_status(printer_service: PrinterService = Depends(get_printer_service)):
     logger.info("Handling GET /api/v1/printer/status request")
     try:

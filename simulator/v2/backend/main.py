@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.responses import HTMLResponse
 from fastapi.responses import RedirectResponse
-from simulator.v2.backend.app.api.endpoints import printer
+from simulator.v2.backend.app.api.swagger_api import SwaggerAPI
 import logging
 import sys
 from pathlib import Path
@@ -13,12 +13,19 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Ultimaker Printer Simulator", docs_url="/docs/api", redoc_url=None)
+# Initialize main FastAPI application with no docs at root
+app = FastAPI(docs_url=None, redoc_url=None)
 
 try:
-    # Mount API endpoints with /api/v1 prefix
-    app.include_router(printer.router, prefix="/api/v1")
-    logger.info(f"API endpoints mounted successfully at /api/v1: {[route.path for route in app.routes if '/api/v1' in route.path]}")
+    # Initialize SwaggerAPI for endpoints (no docs)
+    swagger_api = SwaggerAPI(docs_url=None, redoc_url=None)
+    app.mount("/api/v1", swagger_api.app)
+    logger.info("SwaggerAPI endpoints mounted successfully at /api/v1")
+
+    # Initialize SwaggerAPI for documentation only
+    swagger_docs = SwaggerAPI(docs_url="/", redoc_url="/redoc")
+    app.mount("/docs/api", swagger_docs.app)
+    logger.info("SwaggerAPI documentation mounted successfully at /docs/api")
 
 except Exception as e:
     logger.error(f"API mounting failed: {e}")
