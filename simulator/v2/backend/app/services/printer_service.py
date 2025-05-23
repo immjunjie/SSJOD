@@ -21,3 +21,7 @@ class PrinterService:
     async def get_printer_status(self) -> str:
         logger.debug("Fetching printer status from repository")
         return await self.printer_repo.get_status()
+
+    async def get_serial_number(self) -> str:
+        logger.debug("Fetching printer serial number from repository")
+        return await self.printer_repo.get_serial_number()

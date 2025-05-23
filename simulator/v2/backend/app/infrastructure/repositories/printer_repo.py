@@ -67,7 +67,8 @@ class PrinterRepository:
                 wifi_networks=[]
             ),
             status="idle",
-            validate_header={}
+            validate_header={},
+            serial_number="ULTIMAKER-123456"
         )
 
     async def get(self) -> Printer:
@@ -81,3 +82,7 @@ class PrinterRepository:
     async def get_status(self) -> str:
         logger.info("Fetching printer status from repository")
         return self.printer.status
+
+    async def get_serial_number(self) -> str:
+        logger.info("Fetching printer serial number from repository")
+        return self.printer.serial_number

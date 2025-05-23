@@ -102,7 +102,8 @@ async def get_printer(printer_service: PrinterService = Depends(get_printer_serv
             led=led_response,
             network=network_response,
             status=printer.status,
-            validate_header=printer.validate_header
+            validate_header=printer.validate_header,
+            serial_number=printer.serial_number
         )
     except Exception as e:
         logger.error(f"Error fetching printer: {e}")

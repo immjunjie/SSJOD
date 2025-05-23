@@ -85,3 +85,4 @@ class Printer:
     network: Network
     status: str
     validate_header: Dict
+    serial_number: str

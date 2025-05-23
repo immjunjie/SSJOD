@@ -101,6 +101,7 @@ class PrinterResponse(BaseModel):
     network: NetworkResponse
     status: str
     validate_header: Dict[str, Any]
+    serial_number: str
 
 class StatusRequest(BaseModel):
     status: Literal["printing", "idle"]
