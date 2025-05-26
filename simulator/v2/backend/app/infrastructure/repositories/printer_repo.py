@@ -1,5 +1,4 @@
-from simulator.v2.backend.app.domain.models import Printer, Bed, Temperature, Head, Extruder, Hotend, HotendOffset, HotendStatistics, ActiveMaterial, Feeder, Led, Network
-from typing import Dict, List, Any
+from simulator.v2.backend.app.domain.models.printer_models import Printer, Bed, Temperature, Head, Extruder, Hotend, HotendOffset, HotendStatistics, ActiveMaterial, Feeder, Led, Network
 import logging
 
 logger = logging.getLogger(__name__)
