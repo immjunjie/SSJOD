@@ -1,4 +1,4 @@
-from simulator.v2.backend.app.domain.models import Printer
+from simulator.v2.backend.app.domain.models.printer_models import Printer
 from simulator.v2.backend.app.infrastructure.repositories.printer_repo import PrinterRepository
 import logging
 

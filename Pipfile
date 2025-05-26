@@ -15,6 +15,8 @@ bs4 = "*"
 httpx = "*"
 pytest = "*"
 pytest-asyncio = "*"
+flask = "*"
+flask-socketio = "*"
 
 [dev-packages]
 
