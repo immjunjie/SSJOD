@@ -1,3 +1,4 @@
+import sys
 import os
 import threading
 import requests
@@ -12,15 +13,21 @@ from backend.extractor import run_extraction  # <-- your standalone extractor CL
 # —————————————————————————————————————————————————————————————
 # Configuration & Flask app init
 # —————————————————————————————————————————————————————————————
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-BASE_DIR     = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'frontend', 'templates')
-STATIC_DIR   = os.path.join(BASE_DIR, 'frontend', 'static')
+# Path to the frontend folders (one level up, into frontend/)
+STATIC_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'static')
+TEMPLATE_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'templates')
+
+app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
+
+print("Static folder:", STATIC_FOLDER)
+print("Template folder:", TEMPLATE_FOLDER)
 
 app = Flask(
     __name__,
-    template_folder=TEMPLATE_DIR,
-    static_folder=STATIC_DIR,
+    template_folder=TEMPLATE_FOLDER,
+    static_folder=STATIC_FOLDER,
     static_url_path='/static'
 )
 app.secret_key = 'dojossjod'
