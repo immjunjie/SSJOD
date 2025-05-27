@@ -1,16 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 
-block_cipher = None
+# Get the absolute path to the project directory
+project_dir = os.path.abspath('.')
 
 a = Analysis(
     ['desktop_app.py'],
-    pathex=[],
+    pathex=[project_dir],  # Add project directory to path
     binaries=[],
     datas=[
-        ('backend', 'backend'),
-        ('frontend/templates', 'frontend/templates'),     # ← your Flask templates
-        ('frontend/static', 'frontend/static'),  
-        ],
+        ('backend', 'backend'),  # Include the entire backend directory
+        ('frontend', 'frontend'),  # Include frontend templates/static files
+    ],
     hiddenimports=[
         'requests',
         'flask',
@@ -18,6 +19,15 @@ a = Analysis(
         'engineio.async_drivers.threading',
         'socketio',
         'h5py',
+        'webview',
+        'backend',
+        'backend.app',
+        'backend.extractor',
+        'backend.inspector',
+        'backend.extract_snapshots',
+        'backend.filter_endpoints',
+        'werkzeug.security',
+        'pkg_resources.py2_warn',
     ],
     hookspath=[],
     hooksconfig={},
@@ -27,40 +37,51 @@ a = Analysis(
     optimize=0,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name='desktop_app',
-    debug=False,
+    name='SSJOD',
+    debug=True,                # Enable debug output
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    console=True,             # <-- set this to True temporarily to see output/error
+    icon='frontend/static/ssjodShip.icns',
+    bundle_files=1,
 )
 
 coll = COLLECT(
     exe,
     a.binaries,
-    a.zipfiles,
     a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='desktop_app',
+    name='SSjodex',
 )
 
+
 app = BUNDLE(
-    coll,
+    exe,
+    a.binaries,
+    a.datas,
+    console=True,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
     name='SSJOD.app',
     icon='frontend/static/ssjodShip.icns',
-    bundle_identifier=None,
+    bundle_identifier='com.ucc.ssjod',  # Use your own bundle ID
+    info_plist={
+        'CFBundleName': 'SSJOD',
+        'CFBundleDisplayName': 'SSJOD',
+        'CFBundleIdentifier': 'com.ucc.ssjod',
+        'CFBundleVersion': '0.1',
+        'CFBundleShortVersionString': '0.1',
+        'NSHighResolutionCapable': 'True',
+    }
 )

@@ -3,8 +3,40 @@ import threading
 import time
 import os
 import sys
+
+# For PyInstaller, we need to handle the frozen state
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller bundle
+    bundle_dir = sys._MEIPASS
+    # Add bundle directory to path
+    sys.path.insert(0, bundle_dir)
+    # Change working directory to bundle directory
+    os.chdir(bundle_dir)
+else:
+    # Add the current directory to Python path for imports
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+
 from flask import Flask
-from backend.app import app, socketio
+
+try:
+    from backend.app import app, socketio
+    print("Successfully imported backend modules")
+except ImportError as e:
+    print(f"Import error: {e}")
+    print(f"Python path: {sys.path}")
+    print(f"Current directory: {os.getcwd()}")
+    
+    # Debug: check if backend directory exists
+    if os.path.exists('backend'):
+        print("Backend directory found")
+        print(f"Backend contents: {os.listdir('backend')}")
+    else:
+        print("Backend directory NOT found")
+        print(f"Available directories: {[d for d in os.listdir('.') if os.path.isdir(d)]}")
+    
+    sys.exit(1)
 
 class DesktopPrinterApp:
     def __init__(self):

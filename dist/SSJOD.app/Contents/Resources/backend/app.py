@@ -13,24 +13,29 @@ from backend.extractor import run_extraction  # <-- your standalone extractor CL
 # —————————————————————————————————————————————————————————————
 # Configuration & Flask app init
 # —————————————————————————————————————————————————————————————
-if getattr(sys, 'frozen', False):
-    # Running in PyInstaller bundle (e.g., .app)
-    base_path = os.path.dirname(sys.executable)
-else:
-    # Running as script
-    base_path = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-template_dir = os.path.join(base_path, 'frontend', 'templates')
-static_dir = os.path.join(base_path, 'frontend', 'static')
+# Path to the frontend folders (one level up, into frontend/)
+STATIC_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'static')
+TEMPLATE_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'templates')
 
-app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
 
+print("Static folder:", STATIC_FOLDER)
+print("Template folder:", TEMPLATE_FOLDER)
+
+app = Flask(
+    __name__,
+    template_folder=TEMPLATE_FOLDER,
+    static_folder=STATIC_FOLDER,
+    static_url_path='/static'
+)
 app.secret_key = 'dojossjod'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure these folders exist
-UPLOAD_FOLDER  = os.path.join(base_path, 'uploads')
-DETAILS_FOLDER = os.path.join(base_path, 'Print_details_folder')
+UPLOAD_FOLDER  = os.path.join(BASE_DIR, 'uploads')
+DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
 os.makedirs(UPLOAD_FOLDER,  exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

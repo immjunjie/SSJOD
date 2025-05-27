@@ -5,11 +5,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>SSJOD</string>
 	<key>CFBundleExecutable</key>
-	<string>desktop_app</string>
+	<string>SSJOD</string>
 	<key>CFBundleIconFile</key>
 	<string>ssjodShip.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>SSJOD</string>
+	<string>com.ucc.ssjod</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -17,8 +17,12 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.0.0</string>
+	<string>0.1</string>
+	<key>CFBundleVersion</key>
+	<string>0.1</string>
 	<key>LSBackgroundOnly</key>
 	<true/>
+	<key>NSHighResolutionCapable</key>
+	<string>True</string>
 </dict>
 </plist>
