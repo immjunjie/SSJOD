@@ -28,16 +28,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load existing uploads
   loadUploadedFiles();
 
-  // Use sessionStorage so logs survive the *stop* → reload,
-  // but get cleared whenever we *start* a new logging session.
+  // Load logs for this browser session (across Start/Stop cycles)
   let logs = JSON.parse(sessionStorage.getItem('printerLogs') || '[]');
 
-  // If we've just landed on a *running* session, that means
-  // a new run started — nuke any old logs.
-  if (isLogging) {
-    logs = [];
-    sessionStorage.removeItem('printerLogs');
-  }
 
   // Render whatever is in `logs` (either old from this run, or empty)
   logs.forEach(entry => {
