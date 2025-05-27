@@ -3,6 +3,8 @@ import h5py
 import numpy as np
 from datetime import datetime
 import threading
+import os
+CAMERA_TIMEOUT = float(os.getenv("CAMERA_TIMEOUT"))
 
 
 class PrinterSnapshotter:
@@ -28,7 +30,7 @@ class PrinterSnapshotter:
             bytes: upload raw image data if successful, None otherwise
         """
         try:
-            response = requests.get(self.camera_url, timeout=1.3)
+            response = requests.get(self.camera_url, timeout=CAMERA_TIMEOUT)
             if response.status_code == 200:
                 return response.content
             else:

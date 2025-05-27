@@ -1,6 +1,8 @@
 import os
 import threading
 import requests
+from dotenv import load_dotenv
+load_dotenv() 
 from flask import (
     Flask, render_template, redirect,
     url_for, request, jsonify, session, send_file
@@ -23,12 +25,12 @@ app = Flask(
     static_folder=STATIC_DIR,
     static_url_path='/static'
 )
-app.secret_key = 'dojossjod'
+app.secret_key = os.getenv("SECRET_KEY")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure these folders exist
-UPLOAD_FOLDER  = os.path.join(BASE_DIR, 'uploads')
-DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
+UPLOAD_FOLDER  = os.path.abspath(os.getenv("UPLOAD_FOLDER"))
+DETAILS_FOLDER = os.path.abspath(os.getenv("DETAILS_FOLDER"))
 os.makedirs(UPLOAD_FOLDER,  exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -129,7 +131,7 @@ def set_printer():
     cam = request.form.get('camera_url')
     if ip:
         try:
-            resp = requests.get(f"http://{ip}/docs/printer", timeout=2)
+            resp = requests.get(f"http://{ip}/docs/printer", timeout=float(os.getenv("PRINTER_API_TIMEOUT")))
             if resp.status_code == 200:
                 session['printer_ip']    = ip
                 session['camera_url']    = cam or None

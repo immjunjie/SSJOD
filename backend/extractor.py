@@ -10,6 +10,8 @@ from datetime import datetime
 from .filter_endpoints import filterMask
 from .extract_snapshots import PrinterSnapshotter
 
+PRINTER_API_TIMEOUT = float(os.getenv("PRINTER_API_TIMEOUT"))
+
 
 running = True
 
@@ -59,7 +61,7 @@ def store_file_with_metadata(h5_group, file_path, dataset_name, description):
 
 def query(base_url, name, path):
     try:
-        r = requests.get(base_url + path, timeout=2)
+        r = requests.get(base_url + path, timeout=PRINTER_API_TIMEOUT)
         return name, r.json()
     except Exception as e:
         return name, {"error": str(e)}
