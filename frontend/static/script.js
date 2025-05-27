@@ -28,13 +28,22 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load existing uploads
   loadUploadedFiles();
 
-  // Socket.IO Logs
+  // Use sessionStorage so logs survive the *stop* → reload,
+  // but get cleared whenever we *start* a new logging session.
+  let logs = JSON.parse(sessionStorage.getItem('printerLogs') || '[]');
 
-  let logs = JSON.parse(localStorage.getItem('printerLogs') || '[]');
+  // If we've just landed on a *running* session, that means
+  // a new run started — nuke any old logs.
+  if (isLogging) {
+    logs = [];
+    sessionStorage.removeItem('printerLogs');
+  }
+
+  // Render whatever is in `logs` (either old from this run, or empty)
   logs.forEach(entry => {
     const p = document.createElement('p');
     p.innerText = entry;
-    logDiv?.appendChild(p);
+    logDiv.appendChild(p);
   });
 
 
@@ -47,8 +56,10 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
     logs.push(logEntry);
-    if (logs.length > 500) logs.shift(); // Keep max 500 logs
-    localStorage.setItem('printerLogs', JSON.stringify(logs));
+    if (logs.length > 500) logs.shift();
+    // persist to sessionStorage so stop→reload preserves them,
+    // but they won't survive closing the tab or starting anew.
+    sessionStorage.setItem('printerLogs', JSON.stringify(logs));
 
     const p = document.createElement('p');
     p.innerText = logEntry;
@@ -59,8 +70,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   window.clearLogs = () => {
     logs = [];
-    localStorage.setItem('printerLogs', JSON.stringify([]));
-    if (logDiv) logDiv.innerHTML = '';
+    sessionStorage.removeItem('printerLogs');
+    logDiv.innerHTML = '';
   };
 
   function updateTimerDisplay() {
@@ -144,7 +155,6 @@ socket.on('logging_stopped', function () {
   window.location.reload();
 });
 
-// error messages
 function validateForm() {
   let isValid = true;
 

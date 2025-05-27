@@ -150,6 +150,10 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    // Tell our client-side code if we're currently logging
+    const isLogging = {{ 'true' if logging else 'false' }};
+  </script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
