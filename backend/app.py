@@ -236,11 +236,12 @@ def start():
 def stop():
     global is_logging, log_thread
     is_logging = False
-    # tell extractor to die
+    # signal cancellation
     from backend.extractor import stop_extraction
     stop_extraction()
+    # give the background job a moment to exit cleanly
     if log_thread:
-        log_thread.join(timeout=1)
+        log_thread.join(timeout=2)
     return redirect(url_for('index'))
 
 

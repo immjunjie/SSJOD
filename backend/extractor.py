@@ -13,11 +13,11 @@ from .extract_snapshots import PrinterSnapshotter
 PRINTER_API_TIMEOUT = float(os.getenv("PRINTER_API_TIMEOUT"))
 
 
-running = True
+from threading import Event
+cancel_event = Event()
 
 def stop_extraction():
-    global running
-    running = False
+    cancel_event.set()
 
 def convert_to_float(val):
     if isinstance(val, dict):
@@ -77,8 +77,8 @@ def run_extraction(
     socketio=None
  ):
     
-    global running
-    running = True
+    # reset any previous cancellation
+    cancel_event.clear()
     """
     Poll the printer API, write an HDF5 at output_hdf5, then exit.
     """
@@ -128,7 +128,7 @@ def run_extraction(
         first      = True
 
         print("Beginning extraction…")
-        while running:
+        while not cancel_event.is_set():
             # respect max_duration
             if max_duration and (time.time() - start_time) >= max_duration:
                 print("Reached max_duration—stopping.")
@@ -218,7 +218,11 @@ def run_extraction(
 
             # delay
             if delay_sec:
-                time.sleep(delay_sec)
+                # sleep in small increments so we can respond to cancel_event quickly
+                slept = 0.0
+                while slept < delay_sec and not cancel_event.is_set():
+                    time.sleep(min(0.1, delay_sec - slept))
+                    slept += min(0.1, delay_sec - slept)
 
             if socketio:
                 endpoint_data = {}
