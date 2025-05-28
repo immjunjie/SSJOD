@@ -83,7 +83,7 @@ def run_extraction(
     Poll the printer API, write an HDF5 at output_hdf5, then exit.
     """
     base_url  = f"http://{printer_ip}/api/v1/printer"
-    cam_url   = f"http://{printer_ip}/api/v1/camera"
+    cam_url   = f"http://{printer_ip}/api/v1/camera/0/snapshot"
     endpoints = filterMask(sequence_bits)
 
     layer_height = extract_layer_height(gcode_path)
@@ -162,6 +162,9 @@ def run_extraction(
                 last_z  = current_z
                 first   = False
                 print(f"Starting at layer {layer}, Z={current_z:.3f}")
+                if snapshotter:
+                    print(f"Capturing initial layer snapshot for layer={layer}...")
+                    snapshotter.capture_layer_snapshot(layer)
             elif abs(current_z - (last_z + layer_height)) < 0.05:
                 layer += 1
                 grp   = layers_grp.create_group(f"layer_{layer:04d}")
