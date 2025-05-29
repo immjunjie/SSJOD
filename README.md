@@ -200,6 +200,7 @@ If you’re unfamiliar with HDF5, it’s a binary, hierarchical format designed 
 
 - Filtering logic: Enumerates over endpoint keys, selecting only those with a '1' in the bit sequence, returning a dict of active endpoints.
 
+
 ## 4. Documentation
 *Note: Provide additional detailed documentation.*
 
@@ -220,7 +221,6 @@ If you’re unfamiliar with HDF5, it’s a binary, hierarchical format designed 
 
 ## 7. License
 licensed under the MIT License. See LICENSE for details.
-
 
 
 ## 8. Status
