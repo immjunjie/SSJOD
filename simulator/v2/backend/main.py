@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize main FastAPI application with no docs at root
-app = FastAPI(docs_url=None, redoc_url=None)
+app = FastAPI(docs_url=None, redoc_url=None, debug = True)
 
 try:
     # Initialize SwaggerAPI for endpoints (no docs)
