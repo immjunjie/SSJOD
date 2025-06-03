@@ -5,7 +5,11 @@ a = Analysis(
     ['desktop_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('backend', 'backend')],
+    datas=[
+        ('backend', 'backend')
+        ('frontend/templates', 'frontend/templates'),
+        ('frontend/static', 'frontend/static')
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

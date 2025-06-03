@@ -13,13 +13,24 @@ from backend.extractor import run_extraction  # <-- your standalone extractor CL
 # —————————————————————————————————————————————————————————————
 # Configuration & Flask app init
 # —————————————————————————————————————————————————————————————
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from pathlib import Path
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller .app """
+    try:
+        # PyInstaller bundles apps in a temp folder under _MEIPASS (for onefile)
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Use current directory (dev mode)
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 # Path to the frontend folders (one level up, into frontend/)
-STATIC_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'static')
-TEMPLATE_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'templates')
-
-app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
+STATIC_FOLDER = resource_path('frontend/static')
+TEMPLATE_FOLDER = resource_path('frontend/templates')
+UPLOAD_FOLDER = resource_path('uploads')
+DETAILS_FOLDER = resource_path('Print_details_folder')
 
 print("Static folder:", STATIC_FOLDER)
 print("Template folder:", TEMPLATE_FOLDER)
@@ -34,8 +45,6 @@ app.secret_key = 'dojossjod'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure these folders exist
-UPLOAD_FOLDER  = os.path.join(BASE_DIR, 'uploads')
-DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
 os.makedirs(UPLOAD_FOLDER,  exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
