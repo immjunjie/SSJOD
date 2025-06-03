@@ -1,6 +1,6 @@
 from simulator.v2.backend.app.domain.models.printer_models import Printer
 from simulator.v2.backend.app.infrastructure.repositories.printer_repo import PrinterRepository
-from simulator.v2.backend.app.infrastructure.simulators.print_head import PrintHeadSimulator
+from simulator.v2.backend.app.infrastructure.simulators.print_head_sim import PrintHeadSimulator
 import logging
 
 logger = logging.getLogger(__name__)
