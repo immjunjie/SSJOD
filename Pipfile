@@ -14,9 +14,9 @@ beautifulsoup4 = "*"
 bs4 = "*"
 httpx = "*"
 pytest = "*"
-pytest-asyncio = "*"
 flask = "*"
 flask-socketio = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 
