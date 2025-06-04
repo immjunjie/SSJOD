@@ -3,6 +3,23 @@ import threading
 import time
 import os
 import sys
+import traceback
+
+#error log
+LOG_FILE = os.path.expanduser("~/Desktop/3d_printer_logger_error.log")
+sys.stdout = open(LOG_FILE, 'w')
+sys.stderr = sys.stdout
+
+def log_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+
+# Catch all unhandled exceptions
+sys.excepthook = log_exception
+
+
 
 # For PyInstaller, we need to handle the frozen state
 if getattr(sys, 'frozen', False):
@@ -47,7 +64,7 @@ class DesktopPrinterApp:
         """Start the Flask server in a separate thread"""
         def run_server():
             # Disable Flask's reloader and debug output for desktop use
-            socketio.run(app, host='127.0.0.1', port=self.flask_port, debug=False, use_reloader=False)
+            socketio.run(app, host='127.0.0.1', port=self.flask_port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
         
         self.flask_thread = threading.Thread(target=run_server, daemon=True)
         self.flask_thread.start()
