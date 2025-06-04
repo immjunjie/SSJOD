@@ -26,3 +26,8 @@ backend/UI/uploads
 dbs
 dbs/
 /dbs/
+# PyInstaller build folders
+build/
+dist/
+*.spec
+*.app
