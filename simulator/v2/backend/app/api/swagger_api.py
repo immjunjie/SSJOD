@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from simulator.v2.backend.app.api.endpoints import printer, authentication, materials, network
+from simulator.v2.backend.app.api.endpoints import printer, authentication, materials, network, printjob
 import logging
 
 logger = logging.getLogger(__name__)
@@ -61,4 +61,5 @@ class SwaggerAPI:
         self.app.include_router(authentication.router)
         self.app.include_router(materials.router)
         self.app.include_router(network.router)
+        self.app.include_router(printjob.router)
         logger.info("All routers registered")
