@@ -13,8 +13,9 @@ async def test_get_printjob():
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         response = await ac.get("/printjob")
 
-    print("Status code:", response.status_code)
-    print("Response text:", response.text)
+    import logging
+    logging.info("Status code: %s", response.status_code)
+    logging.debug("Response text: %s", response.text)
 
     assert response.status_code == 200
 
@@ -64,8 +65,8 @@ async def test_create_print_job():
         }
 
         response = await ac.post("/printjob", json=job_data)
-        print("Status code:", response.status_code)
-        print("Response text:", response.text)
+        logger.debug("Status code: %s", response.status_code)
+        logger.debug("Response text: %s", response.text)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, dict), "Response should be a dictionary representing the print job"
