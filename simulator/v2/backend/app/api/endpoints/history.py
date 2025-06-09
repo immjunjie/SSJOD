@@ -5,24 +5,26 @@ from simulator.v2.backend.app.services.history_service import HistoryService
 from typing import List, Annotated
 import logging
 
-# Configure logging
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
 
-def get_history_repo() -> HistoryRepo:
+history_repo = HistoryRepo()
+history_service = HistoryService(history_repository=history_repo)
+
+
+def get_history_repo():
     """
     Provide a HistoryRepo instance for dependency injection.
     """
     logger.debug("Creating HistoryRepo instance.")
-    return HistoryRepo()
+    return history_repo
 
-def get_history_service(history_repo: HistoryRepo = Depends(get_history_repo)) -> HistoryService:
+def get_history_service():
     """
     Provide a HistoryService instance for dependency injection.
     """
     logger.debug("Creating HistoryService instance.")
-    return HistoryService(history_repository=history_repo)
+    return history_service
 
 @router.get("/history", response_model=List[HistoryModel], tags=["History"])
 async def get_history(service: Annotated[HistoryService, Depends(get_history_service)]):
