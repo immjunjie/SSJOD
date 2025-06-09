@@ -1,28 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional, Dict
-
-"""
-Objectives
-
-HistoriesModel [
-    History
-]
-
-HistoryModel {
-    time_elapsed (interger, optional),
-    time_estimated (interger, optional),
-    time_total (interger, optional),
-    datetime_started (string, optional),
-    datetime_finished (string, optional),
-    datetime_cleaned (string, optional),
-    results (string, optional) = ['Finished', 'Aborted'],
-    source (string, optional),
-    reprint_orginal_uuid (string, optional): UUID in UUID4 format,
-    name: (string, optional),
-    uuid: (string, optional): UUID in UUID4 format,
-}
-
-"""
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal
+from datetime import datetime
+import uuid
 
 class HistoryModel(BaseModel):
     time_elapsed: Optional[int] = None
@@ -31,12 +10,16 @@ class HistoryModel(BaseModel):
     datetime_started: Optional[str] = None
     datetime_finished: Optional[str] = None
     datetime_cleaned: Optional[str] = None
-    result: Optional[str] = None  # 'Finished' or 'Aborted'
+    result: Optional[Literal["Finished", "Aborted"]] = None
     source: Optional[str] = None
-    reprint_original_uuid: Optional[str] = None  # UUID in UUID4 format
+    reprint_original_uuid: Optional[str] = None  # Should be UUID4 format
     name: Optional[str] = None
-    uuid: Optional[str] = None  # UUID in UUID4 format
+    uuid: Optional[str] = None  # Should be UUID4 format
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        }
 
 class HistoriesModel(BaseModel):
-    history: List[HistoryModel]
-
+    history: List[HistoryModel] = Field(default_factory=list)
