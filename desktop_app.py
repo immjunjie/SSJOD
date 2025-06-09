@@ -47,7 +47,7 @@ class DesktopPrinterApp:
         """Start the Flask server in a separate thread"""
         def run_server():
             # Disable Flask's reloader and debug output for desktop use
-            socketio.run(app, host='127.0.0.1', port=self.flask_port, debug=False, use_reloader=False)
+            socketio.run(app, host='127.0.0.1', port=self.flask_port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
         
         self.flask_thread = threading.Thread(target=run_server, daemon=True)
         self.flask_thread.start()
@@ -80,4 +80,10 @@ def main():
     app_instance.create_desktop_window()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        print("An error occurred:")
+        traceback.print_exc()
+        input("Press Enter to exit...")
