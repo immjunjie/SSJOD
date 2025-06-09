@@ -23,5 +23,4 @@ async def test_get_history():
     assert response.status_code == 200
 
     data = response.json()
-    assert isinstance(data, dict) and "history" in data and isinstance(data["history"], list)
-    print(data)
+    assert isinstance(data, list)
