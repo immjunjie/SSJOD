@@ -1,20 +1,21 @@
-from simulator.v2.backend.app.domain.models.authentication_models import Check, Verify
-from typing import Dict, Any
+from simulator.v2.backend.app.domain.models.authentication_models import AuthenticationVerifyModel
 import logging
 
-logger = logging.getLogger(__name__)
+auth_logger = logging.getLogger(__name__)
 
 class AuthenticationRepository:
     def __init__(self):
-        self.data: Dict[str, Any] = {
-            "check": Check(message="authorized"),
-            "verify": Verify(message="authorized")
-        }
+        """
+        Repository for handling authentication verification.
+        """
+        self._authentication_verify = AuthenticationVerifyModel()
 
-    async def get_check_by_id(self) -> Check:
-        logger.debug("Fetching check by ID")
-        return self.data["check"]
+    async def verify_authentication(self) -> AuthenticationVerifyModel:
+        """
+        Verifies the authentication and returns a model indicating the result.
 
-    async def get_auth_verify(self) -> Verify:
-        logger.debug("Fetching auth verify")
-        return self.data["verify"]
+        Returns:
+            AuthenticationVerifyModel: Model containing the verification message.
+        """
+        auth_logger.debug(self._authentication_verify)
+        return self._authentication_verify

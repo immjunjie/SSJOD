@@ -1,9 +1,13 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
+from typing import Optional
 
-@dataclass
-class Verify:
-    message: str
+"""
+Objectives
 
-@dataclass
-class Check:
-    message: str
+authentication_verify_model {
+    message (string, optional) = ['ok']
+}
+"""
+
+class AuthenticationVerifyModel(BaseModel):
+    message: Optional[str] = 'ok'  # Message indicating the result of the verification, default is 'ok'

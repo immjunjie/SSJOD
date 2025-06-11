@@ -5,10 +5,6 @@ from simulator.v2.backend.app.services.ambient_temperature_service import Ambien
 
 @pytest.mark.asyncio
 async def test_get_ambient_temperature():
-    """
-    Test the get_ambient_temperature method of AmbientTemperatureService.
-    """
-
     # Arrange
     ambient_temperature_service = AmbientTemperatureService(AmbientTemperatureRepository())
 
