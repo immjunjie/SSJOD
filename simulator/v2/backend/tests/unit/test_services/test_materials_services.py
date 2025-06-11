@@ -1,5 +1,5 @@
 import pytest
-from simulator.v2.backend.app.domain.models.materials_models import MaterialList
+from simulator.v2.backend.app.domain.models.materials_models import MaterialsModel
 from simulator.v2.backend.app.infrastructure.repositories.materials_repo import MaterialRepository
 from simulator.v2.backend.app.services.materials_service import MaterialsService
 
@@ -13,8 +13,8 @@ async def test_list_materials_returns_material_list():
     materials_service = MaterialsService(MaterialRepository())
 
     # Act
-    result = await materials_service.list_materials()
+    result = await materials_service.get_materials()
 
     # Assert
-    assert isinstance(result, MaterialList)
+    assert isinstance(result, MaterialsModel)
     assert result.materials is not None

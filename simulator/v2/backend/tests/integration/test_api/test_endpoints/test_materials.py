@@ -14,8 +14,17 @@ async def test_get_materials():
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         response = await ac.get("/materials")
 
-    print("Status code:", response.status_code)
+    print("\nStatus code:", response.status_code)
     print("Response text:", response.text)
 
     assert response.status_code == 200
-    assert isinstance(response.json()["materials"], list)
+
+
+@pytest.mark.asyncio
+async def test_get_materials_response_type():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/materials")
+
+    print("\nResponse type:", type(response.json()))
+    assert isinstance(response.json(), list)
