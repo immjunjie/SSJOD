@@ -24,7 +24,7 @@ def get_ambient_temperature_service():
     ambient_temperature_logger.debug("Get the AmbientTemperatureService instance.")
     return ambient_temperature_service
 
-@router.get("/ambient_temperature", response_model=AmbientTemperatureModel, tags=["AmbientTemperature"])
+@router.get("/ambient_temperature", response_model=AmbientTemperatureModel, tags=["Ambient_temperature"])
 async def get_ambient_temperature(service: AmbientTemperatureService = Depends(get_ambient_temperature_service)):
     """
     Retrieve ambient temperature information.
