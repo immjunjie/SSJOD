@@ -1,6 +1,13 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import List
 
-@dataclass
-class MaterialList:
-    materials: List[str]
+"""
+Objectives
+
+MaterialsModel [
+    string
+]
+"""
+
+class MaterialsModel(BaseModel):
+    materials: List[str] = []  # List of materials
