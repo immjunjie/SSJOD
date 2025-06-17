@@ -50,6 +50,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    onefile=True,
     console=False,  # ← might help icon appear
     icon='frontend/static/SSjodBoat.ico',
 )

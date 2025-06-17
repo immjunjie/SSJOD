@@ -1,7 +1,7 @@
 [Setup]
 AppName=SSJOD
 AppVersion=1.0
-DefaultDirName={autopf}\SSJOD
+DefaultDirName={localappdata}\SSJOD
 DefaultGroupName=SSJOD
 OutputDir=Output
 OutputBaseFilename=SSJOD-Setup

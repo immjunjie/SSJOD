@@ -34,8 +34,8 @@ app.secret_key = 'dojossjod'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure these folders exist
-UPLOAD_FOLDER  = os.path.join(BASE_DIR, 'uploads')
-DETAILS_FOLDER = os.path.join(BASE_DIR, 'Print_details_folder')
+UPLOAD_FOLDER  = os.path.join(os.getenv('APPDATA'), 'SSJOD', 'uploads')
+DETAILS_FOLDER = os.path.join(os.getenv('APPDATA'), 'SSJOD', 'Print_details_folder')
 os.makedirs(UPLOAD_FOLDER,  exist_ok=True)
 os.makedirs(DETAILS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
