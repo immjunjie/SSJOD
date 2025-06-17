@@ -28,6 +28,11 @@ a = Analysis(
         'backend.filter_endpoints',
         'werkzeug.security',
         'pkg_resources.py2_warn',
+        'tkinter',
+        'tkinter.filedialog',
+        'tkinter.constants',
+        'tkinter.ttk',
+        'tkinter.messagebox'
     ],
     hookspath=[],
     hooksconfig={},

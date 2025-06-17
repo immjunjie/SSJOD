@@ -129,7 +129,7 @@
 
     <!-- HDF5 Download -->
     <div class="download-section">
-      <form action="/download" method="POST">
+      <form action="/download" method="GET">
         <label for="selected_file">Select existing HDF5 file:</label>
         <select name="selected_file" id="selected_file" required>
           {% for file in existing_files if file != 'New' %}
@@ -137,11 +137,10 @@
           {% endfor %}
         </select>
 
-        <label for="custom_name">Download as:</label>
+        <label for="custom_name">save as:</label>
         <input type="text" id="custom_name" name="custom_name" placeholder="my_print_data.hdf5" required>
 
         <button type="submit">Download HDF5</button>
-
         {% if downloadBoxError %}
           <p>{{ downloadBoxError }}</p>
         {% endif %}
