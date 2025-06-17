@@ -26,3 +26,5 @@ backend/UI/uploads
 dbs
 dbs/
 /dbs/
+dmg_temp/
+dist/

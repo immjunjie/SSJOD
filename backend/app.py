@@ -4,12 +4,12 @@ import threading
 import requests
 from flask import (
     Flask, render_template, redirect,
-    url_for, request, jsonify, session, send_file
+    url_for, request, jsonify, session, send_file, flash
 )
 from flask_socketio import SocketIO
 
 from backend.extractor import run_extraction  # <-- your standalone extractor CLI logic
-
+import logging
 # —————————————————————————————————————————————————————————————
 # Configuration & Flask app init
 # —————————————————————————————————————————————————————————————
@@ -206,13 +206,10 @@ def start():
     if sel != "New":
         hdf5_fn = os.path.join(DETAILS_FOLDER, sel)
     else:
-        existing = [
-            f for f in os.listdir(DETAILS_FOLDER)
-            if f.startswith("print_details_") and f.endswith(".hdf5")
-        ]
-        idxs = [int(f.split("_")[-1].split(".")[0]) for f in existing]
-        nxt = max(idxs)+1 if idxs else 0
-        hdf5_fn = os.path.join(DETAILS_FOLDER, f"print_details_{nxt}.hdf5")
+        from datetime import datetime
+    
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        hdf5_fn = os.path.join(DETAILS_FOLDER, f"print_details_{timestamp}.hdf5")
 
     # pick paths
     gcode_path = next(p for n,p in uploaded.items() if n.endswith('.gcode'))
@@ -278,15 +275,59 @@ def delete_file(filename):
     session['uploaded_paths'] = uploaded
     return jsonify(success=True)
 
-
-@app.route('/download', methods=['POST'])
+@app.route('/download', methods=['GET'])
 def download():
-    sel = request.form.get("selected_file","")
-    custom = request.form.get("custom_name","")
+    logging.debug("/download did run")
+
+    sel = request.args.get("selected_file", "")
+    custom = request.args.get("custom_name", "")
+    logging.debug(f"Form values - selected_file: {sel}, custom_name: {custom}")
+
     if not sel or not custom:
-        return render_template("index.html", downloadBoxError="Select file + name")
-    # sanitize …
+        logging.debug("Missing form fields")
+        flash("Please select a file and enter a download name", "error")
+        return redirect(url_for('index'))
+
     src = os.path.join(DETAILS_FOLDER, sel)
-    return send_file(src, as_attachment=True, download_name=custom, mimetype='application/octet-stream')
+    logging.debug(f"Resolved source file path: {src}")
 
+    if not os.path.exists(src):
+        logging.debug(f"Source file does not exist: {src}")
+        flash(f"File not found: {sel}", "error")
+        return redirect(url_for('index'))
 
+    if not custom.endswith('.hdf5'):
+        custom += '.hdf5'
+        logging.debug(f"Appended .hdf5 to custom filename: {custom}")
+
+    try:
+        import shutil
+        import platform
+        
+        # Get the user's Downloads folder
+        if platform.system() == "Windows":
+            downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+        elif platform.system() == "Darwin":  # macOS
+            downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+        else:  # Linux
+            downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+        
+        dest_path = os.path.join(downloads_folder, custom)
+        
+        # Handle duplicate filenames
+        counter = 1
+        original_dest = dest_path
+        while os.path.exists(dest_path):
+            name, ext = os.path.splitext(original_dest)
+            dest_path = f"{name}_{counter}{ext}"
+            counter += 1
+        
+        shutil.copy2(src, dest_path)
+        logging.debug(f"File copied to: {dest_path}")
+        flash(f"File downloaded to: {dest_path}", "success")
+        
+    except Exception as e:
+        logging.exception("Download error occurred")
+        flash(f"Download error: {str(e)}", "error")
+    
+    return redirect(url_for('index'))
