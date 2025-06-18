@@ -13,7 +13,7 @@ class BedPreHeat(BaseModel):
 class Bed(BaseModel):
     type: Optional[str] = None
     temperature: Optional[Temperature] = None
-    pre_heat: Optional[BedPreHeat] = None
+    pre_heat: Optional[Dict[str, Any]] = None
 
 class Feeder(BaseModel):
     position: Optional[float] = Field(default=None, description="The position of the feeder. This is otherwise known as the E value")
@@ -22,7 +22,7 @@ class Feeder(BaseModel):
     acceleration: Optional[float] = Field(default=None, description="Acceleration of the feeder (in mm/s^2)")
 
 class HotendOffset(BaseModel):
-    state: Optional[str] = Field(default=None, description="State of the offset", regex=r"^(valid|invalid)$")
+    state: Optional[str] = Field(default=None, description="State of the offset", pattern=r"^(valid|invalid)$")
     x: Optional[float] = None
     y: Optional[float] = None
     z: Optional[float] = None
@@ -32,9 +32,11 @@ class HotendStatistics(BaseModel):
     material_extruded: Optional[int] = Field(default=None, description="Approximate accumulated amount of material extruded during printing in millimeters")
     max_temperature_exposed: Optional[int] = Field(default=None, description="Maximum temperature exposed in degrees Celsius")
     time_spent_hot: Optional[int] = Field(default=None, description="Approximate time spent above 65 degrees Celsius in seconds")
+    prints_since_cleaned: Optional[str] = None
 
 class Hotend(BaseModel):
     id: str
+    revision: Optional[str] = None
     serial: Optional[str] = Field(default=None, description="A hexadecimal representation of the serial number")
     temperature: Optional[Temperature] = None
     offset: Optional[HotendOffset] = None
@@ -42,6 +44,7 @@ class Hotend(BaseModel):
 
 class Material(BaseModel):
     GUID: Optional[str] = Field(default=None, description="Unique identifier of the material, empty string if no material loaded")
+    guid: Optional[str] = None
     length_remaining: Optional[float] = Field(default=None, description="mm of filament remaining on spool. Returns -1 if the remaining length is unknown")
 
 class Extruder(BaseModel):
@@ -55,10 +58,10 @@ class XYZ(BaseModel):
     z: Optional[float] = None
 
 class Head(BaseModel):
-    position: Optional[XYZ] = None
-    max_speed: Optional[XYZ] = None
+    position: Optional[Dict[str, Any]] = None
+    max_speed: Optional[Dict[str, Any]] = None
     acceleration: Optional[float] = Field(default=None, description="The default acceleration for the X, Y and Z axis")
-    jerk: Optional[XYZ] = None
+    jerk: Optional[Dict[str, Any]] = None
     extruders: Optional[List[Extruder]] = None
     fan: Optional[float] = Field(default=None, description="The speed of the fan in percentage")
 
@@ -76,7 +79,7 @@ class WifiNetwork(BaseModel):
 class InlineModel(BaseModel):
     connected: Optional[bool] = Field(default=None, description="A bool indicating if the interface is connected")
     enabled: Optional[bool] = Field(default=None, description="A bool indicating if the interface is enabled")
-    mode: Optional[str] = Field(default=None, description="Wifi mode", regex=r"^(AUTO|HOTSPOT|WIFI SETUP|CABLE|WIRELESS|OFFLINE)$")
+    mode: Optional[str] = Field(default=None, description="Wifi mode", pattern=r"^(AUTO|HOTSPOT|WIFI SETUP|CABLE|WIRELESS|OFFLINE)$")
     ssid: Optional[str] = Field(default=None, description="If connected, the SSID of the hotspot this machine is connected to")
 
 class InlineModel0(BaseModel):
@@ -84,9 +87,9 @@ class InlineModel0(BaseModel):
     enabled: Optional[bool] = Field(default=None, description="A bool indicating if the interface is enabled")
 
 class Network(BaseModel):
-    wifi: Optional[InlineModel] = None
+    wifi: Optional[Dict[str, Any]] = None
     wifi_networks: Optional[List[WifiNetwork]] = None
-    ethernet: Optional[InlineModel0] = None
+    ethernet: Optional[Dict[str, Any]] = None
 
 class Camera(BaseModel):
     feed: str

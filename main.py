@@ -26,7 +26,7 @@ def start_backend():
     Launch the Flask + SocketIO backend service on port 5000.
     """
     print("[Main] Starting backend Flask service on port 5000...")
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, allow_uns afe_werkzeug=True)
 
 
 def main():
