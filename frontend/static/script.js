@@ -67,6 +67,33 @@ window.addEventListener('DOMContentLoaded', () => {
     logDiv.innerHTML = '';
   };
 
+
+// Invenio modal: show/hide logic
+const invenioBtn   = document.getElementById('upload-invenio-btn');
+const invenioModal = document.getElementById('invenio-modal');
+const invenioClose = document.getElementById('invenio-modal-close');
+
+if (invenioBtn && invenioModal && invenioClose) {
+  // Show modal when button is clicked
+  invenioBtn.addEventListener('click', () => {
+    invenioModal.style.display = 'block';
+  });
+
+  // Hide modal when “×” is clicked
+  invenioClose.addEventListener('click', () => {
+    invenioModal.style.display = 'none';
+  });
+
+  // Hide modal when clicking outside the modal-content
+  window.addEventListener('click', (event) => {
+    if (event.target === invenioModal) {
+      invenioModal.style.display = 'none';
+    }
+  });
+}
+
+
+
   function updateTimerDisplay() {
     const hrs = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
     const mins = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
