@@ -8,7 +8,7 @@ OutputBaseFilename=SSJOD-Setup
 SetupIconFile=frontend\static\SSjodBoat.ico
 
 [Files]
-Source: "dist\SSjodex\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\SSJOD"; Filename: "{app}\SSJOD.exe"
