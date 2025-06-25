@@ -2,9 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simulator v2 Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.30/dist/vue.global.prod.js"></script>
 </head>
-<body>
+<body class="bg-light">
+<div id="app" class="container py-4">
+    <h1 class="mb-4">Simulator v2 Control</h1>
 
+    <div class="card mb-3">
+        <div class="card-body d-flex align-items-center gap-2">
+            <button class="btn btn-success" :disabled="printing" @click="start">Start</button>
+            <button class="btn btn-secondary" :disabled="!printing" @click="stop">Stop</button>
+            <span class="ms-auto">Status: <span :class="{'text-success': printing, 'text-muted': !printing}">{{ printing ? 'Printing' : 'Idle' }}</span></span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Live Printer Data</div>
+        <div class="card-body">
+            <pre class="mb-0" style="white-space: pre-wrap">{{ pretty(printer) }}</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue
+createApp({
+    data() {
+        return {
+            printing: false,
+            printer: {},
+            ws: null,
+            base: ''
+        }
+    },
+    methods: {
+        pretty(o){
+            try { return JSON.stringify(o, null, 2) } catch { return String(o) }
+        },
+        async start(){
+            await fetch(`${this.base}/api/v1/control/start`, {method:'POST'})
+            this.printing = true
+        },
+        async stop(){
+            await fetch(`${this.base}/api/v1/control/stop`, {method:'POST'})
+            this.printing = false
+        },
+        connectWS(){
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+            this.ws = new WebSocket(`${proto}://${location.host}/api/v1/ws/printer`)
+            this.ws.onmessage = (evt)=>{
+                try { this.printer = JSON.parse(evt.data) } catch {}
+            }
+            this.ws.onclose = ()=> setTimeout(this.connectWS, 1000)
+        }
+    },
+    async mounted(){
+        this.base = ''
+        try {
+            const s = await fetch(`${this.base}/api/v1/control/status`).then(r=>r.json())
+            this.printing = !!s.printing
+        } catch {}
+        this.connectWS()
+    }
+}).mount('#app')
+</script>
 </body>
 </html>

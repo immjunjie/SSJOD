@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.responses import HTMLResponse
 from fastapi.responses import RedirectResponse
 from simulator.v2.backend.app.api.swagger_api import SwaggerAPI
@@ -30,6 +31,12 @@ try:
 except Exception as e:
     logger.error(f"API mounting failed: {e}")
     raise
+
+# Mount frontend UI under /ui
+frontend_path = Path(__file__).resolve().parents[2] / "frontend"
+if frontend_path.exists():
+    app.mount("/ui", StaticFiles(directory=str(frontend_path), html=True), name="ui")
+    logger.info(f"Frontend mounted at /ui from {frontend_path}")
 
 @app.get("/", include_in_schema=False)
 async def root_redirect():
