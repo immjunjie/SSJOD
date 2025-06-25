@@ -27,6 +27,19 @@ async def start(printer_service: PrinterService = Depends(get_printer_service)):
         return {"ok": True, "printing": True}
     _printing_flag = True
     await printer_service.set_printer_status("printing")
+    # reset head position.x to 0 when starting
+    try:
+        printer = await printer_service.get_printer()
+        if printer.heads:
+            head = printer.heads[0]
+            if head.position is None:
+                head.position = {"x": 0.0, "y": 0.0, "z": 0.0}
+            else:
+                head.position["x"] = 0.0
+            if hasattr(printer_service.printer_repo, "save_printer"):
+                await printer_service.printer_repo.save_printer(printer)
+    except Exception as e:
+        logger.warning(f"failed to reset head position on start: {e}")
     if _broadcaster_task is None or _broadcaster_task.done():
         _broadcaster_task = asyncio.create_task(_background_tick(printer_service))
     return {"ok": True, "printing": True}
@@ -45,7 +58,18 @@ async def _background_tick(printer_service: PrinterService):
         while _printing_flag:
             # Touch the service to evolve temperature and persist if enabled
             try:
-                await printer_service.get_printer()
+                printer = await printer_service.get_printer()
+                # increment head position.x from 0 to 355 then loop every second
+                if printer.heads:
+                    head = printer.heads[0]
+                    if head.position is None:
+                        head.position = {"x": 0.0, "y": 0.0, "z": 0.0}
+                    x_val = head.position.get("x", 0.0) or 0.0
+                    x_val = float(x_val)
+                    x_val = 0.0 if x_val >= 355.0 else x_val + 1.0
+                    head.position["x"] = x_val
+                    if hasattr(printer_service.printer_repo, "save_printer"):
+                        await printer_service.printer_repo.save_printer(printer)
             except Exception as e:
                 logger.warning(f"tick failed: {e}")
             await asyncio.sleep(1.0)
