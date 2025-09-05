@@ -17,6 +17,7 @@ pytest = "*"
 flask = "*"
 flask-socketio = "*"
 pytest-asyncio = "*"
+motor = "*"
 
 [dev-packages]
 

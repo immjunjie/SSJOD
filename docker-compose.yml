@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  mongo:
+    image: mongo:7
+    container_name: sim-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+  simulator:
+    build:
+      context: .
+      dockerfile: simulator/v2/Dockerfile
+    container_name: sim-v2-app
+    environment:
+      - SIM_REPO=mongo
+      - SIM_MONGO_URI=mongodb://mongo:27017
+      - SIM_MONGO_DB=simulator_v2
+      - SIM_MONGO_COLL=printer_state
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+volumes:
+  mongo_data:
