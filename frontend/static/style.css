@@ -354,3 +354,97 @@ body {
 .error-message {
     color: #dc3545;
   }
+
+#upload-invenio-btn {
+    background-color: #007bff;  
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s ease;
+}
+#upload-invenio-btn:hover {
+    background-color: #0056b3;
+}
+
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;   
+}
+
+
+.modal-content {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    text-align: left;
+}
+
+
+.close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.close:hover {
+    color: #dc3545;
+}
+
+
+#invenio-form label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+    color: #333;
+}
+#invenio-form input[type="text"],
+#invenio-form input[type="date"],
+#invenio-form select,
+#invenio-form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+#invenio-form textarea {
+    resize: vertical;
+}
+
+#invenio-form button[type="submit"] {
+    margin-top: 20px;
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+#invenio-form button[type="submit"]:hover {
+    background-color: #218838;
+}

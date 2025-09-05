@@ -5,11 +5,12 @@ from dotenv import load_dotenv
 load_dotenv() 
 from flask import (
     Flask, render_template, redirect,
-    url_for, request, jsonify, session, send_file
+    url_for, request, jsonify, session, send_file, flash
 )
 from flask_socketio import SocketIO
 
 from backend.extractor import run_extraction  # <-- your standalone extractor CLI logic
+from backend.upload_to_invenio import create_record, upload_file
 
 # —————————————————————————————————————————————————————————————
 # Configuration & Flask app init
@@ -284,5 +285,39 @@ def download():
     # sanitize …
     src = os.path.join(DETAILS_FOLDER, sel)
     return send_file(src, as_attachment=True, download_name=custom, mimetype='application/octet-stream')
+
+
+
+
+# —————————————————————————————————————————————————————————————
+# VVV TO BE CONTINUED... (NEEDS TESTING AND FURTHER DEVELOPMENT) VVV
+# —————————————————————————————————————————————————————————————
+@app.route('/upload-to-invenio', methods=['POST'])
+def upload_to_invenio():
+
+    selected_file = request.form.get('invenio_selected_file')
+    meta_title = request.form.get('meta_title')
+    meta_creators = request.form.get('meta_creators')
+    meta_description = request.form.get('meta_description')
+    meta_pub_date = request.form.get('meta_pub_date')
+ 
+    metadata = {
+        'title': meta_title,
+        'creators': [ {'name': name.strip()} for name in meta_creators.split(',') ],
+        'description': meta_description,
+        'publication_date': meta_pub_date
+    }
+
+    file_path = os.path.join(os.getcwd(), 'Print_details_folder', selected_file)
+
+    try:  
+        record_id = create_record(metadata)
+        upload_resp = upload_file(record_id, file_path)
+        flash(f'Invenio upload successful: record {record_id}', 'success')
+    except Exception as e:
+        flash(f'Upload to Invenio failed: {e}', 'error')
+
+    return redirect(url_for('index'))
+
 
 
