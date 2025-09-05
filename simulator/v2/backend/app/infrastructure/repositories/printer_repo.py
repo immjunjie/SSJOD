@@ -1,4 +1,4 @@
-from simulator.v2.backend.app.domain.models.printer_models import Printer, Bed, Temperature, Head, Extruder, Hotend, HotendOffset, HotendStatistics, ActiveMaterial, Feeder, Led, Network
+from simulator.v2.backend.app.domain.models.printer_models import Printer, Bed, Temperature, Head, Extruder, Hotend, HotendOffset, HotendStatistics, Material, Feeder, Led, Network
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,36 +17,32 @@ class PrinterRepository:
                     acceleration=3000,
                     extruders=[
                         Extruder(
-                            active_material=ActiveMaterial(GUID="", guid="", length_remaining=-1),
+                            active_material=Material(GUID="", length_remaining=-1),
                             feeder=Feeder(acceleration=3000, jerk=5, max_speed=45),
                             hotend=Hotend(
                                 id="AA 0.4",
                                 offset=HotendOffset(state="valid", x=0, y=0, z=0),
-                                revision="1",
                                 serial="1db675430000",
                                 statistics=HotendStatistics(
                                     last_material_guid="03f24266-0291-43c2-a6da-5211892a2699",
                                     material_extruded=67790,
                                     max_temperature_exposed=235,
-                                    prints_since_cleaned="46",
                                     time_spent_hot=278760
                                 ),
                                 temperature=Temperature(current=20.0, target=0)
                             )
                         ),
                         Extruder(
-                            active_material=ActiveMaterial(GUID="", guid="", length_remaining=-1),
+                            active_material=Material(GUID="", length_remaining=-1),
                             feeder=Feeder(acceleration=3000, jerk=5, max_speed=45),
                             hotend=Hotend(
                                 id="AA 0.4",
                                 offset=HotendOffset(state="valid", x=0.14634146341463428, y=0.14634146341463428, z=0),
-                                revision="1",
                                 serial="502f75430000",
                                 statistics=HotendStatistics(
                                     last_material_guid="e509f649-9fe6-4b14-ac45-d441438cb4ef",
                                     material_extruded=4370,
                                     max_temperature_exposed=213,
-                                    prints_since_cleaned="16",
                                     time_spent_hot=47580
                                 ),
                                 temperature=Temperature(current=20.0, target=0)

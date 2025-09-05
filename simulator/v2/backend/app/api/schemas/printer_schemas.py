@@ -1,110 +1,136 @@
-from pydantic import BaseModel
-from typing import Dict, List, Any, Literal
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field
 
-class PreHeatResponse(BaseModel):
-    active: bool
+try:
+	from pydantic import ConfigDict
+except Exception:
+	ConfigDict = dict  # fallback, though environment uses pydantic v2
+
 
 class TemperatureResponse(BaseModel):
-    current: float
-    target: float
+	current: Optional[float] = None
+	target: Optional[float] = None
 
-class BedResponse(BaseModel):
-    pre_heat: PreHeatResponse
-    temperature: TemperatureResponse
-    type: str
+
+class PreHeatResponse(BaseModel):
+	model_config = ConfigDict(extra='allow')
+	active: Optional[bool] = None
+
 
 class MaterialResponse(BaseModel):
-    GUID: str
-    guid: str
-    length_remaining: int
+	GUID: Optional[str] = None
+	guid: Optional[str] = None
+	length_remaining: Optional[float] = None
+
 
 class FeederResponse(BaseModel):
-    acceleration: int
-    jerk: float
-    max_speed: int
+	acceleration: Optional[float] = None
+	jerk: Optional[float] = None
+	max_speed: Optional[float] = None
+
 
 class OffsetResponse(BaseModel):
-    state: str
-    x: float
-    y: float
-    z: float
+	state: Optional[str] = None
+	x: Optional[float] = None
+	y: Optional[float] = None
+	z: Optional[float] = None
+
 
 class StatisticsResponse(BaseModel):
-    last_material_guid: str
-    material_extruded: int
-    max_temperature_exposed: int
-    prints_since_cleaned: str
-    time_spent_hot: int
+	last_material_guid: Optional[str] = None
+	material_extruded: Optional[int] = None
+	max_temperature_exposed: Optional[int] = None
+	prints_since_cleaned: Optional[str] = None
+	time_spent_hot: Optional[int] = None
+
 
 class HotendResponse(BaseModel):
-    id: str
-    offset: OffsetResponse
-    revision: str
-    serial: str
-    statistics: StatisticsResponse
-    temperature: TemperatureResponse
+	id: str
+	revision: Optional[str] = None
+	serial: Optional[str] = None
+	statistics: Optional[StatisticsResponse] = None
+	temperature: Optional[TemperatureResponse] = None
+	offset: Optional[OffsetResponse] = None
+
 
 class ExtruderResponse(BaseModel):
-    active_material: MaterialResponse
-    feeder: FeederResponse
-    hotend: HotendResponse
+	active_material: Optional[MaterialResponse] = None
+	feeder: Optional[FeederResponse] = None
+	hotend: Optional[HotendResponse] = None
+
 
 class JerkResponse(BaseModel):
-    x: float
-    y: float
-    z: float
+	x: Optional[float] = None
+	y: Optional[float] = None
+	z: Optional[float] = None
+
 
 class MaxSpeedResponse(BaseModel):
-    x: int
-    y: int
-    z: int
+	x: Optional[float] = None
+	y: Optional[float] = None
+	z: Optional[float] = None
+
 
 class PositionResponse(BaseModel):
-    x: float
-    y: float
-    z: float
+	x: Optional[float] = None
+	y: Optional[float] = None
+	z: Optional[float] = None
+
 
 class HeadResponse(BaseModel):
-    acceleration: int
-    extruders: List[ExtruderResponse]
-    fan: int
-    jerk: JerkResponse
-    max_speed: MaxSpeedResponse
-    position: PositionResponse
+	acceleration: Optional[float] = None
+	extruders: Optional[List[ExtruderResponse]] = None
+	fan: Optional[float] = None
+	jerk: Optional[JerkResponse] = None
+	max_speed: Optional[MaxSpeedResponse] = None
+	position: Optional[PositionResponse] = None
+
+
+class BedResponse(BaseModel):
+	pre_heat: Optional[PreHeatResponse] = None
+	temperature: Optional[TemperatureResponse] = None
+	type: Optional[str] = None
+
 
 class LedResponse(BaseModel):
-    blink: Dict[str, Any]
-    brightness: int
-    hue: int
-    saturation: int
+	blink: Optional[Dict[str, Any]] = None
+	brightness: Optional[float] = None
+	hue: Optional[float] = None
+	saturation: Optional[float] = None
+
 
 class EthernetResponse(BaseModel):
-    connected: bool
-    enabled: bool
+	connected: Optional[bool] = None
+	enabled: Optional[bool] = None
+
 
 class WifiResponse(BaseModel):
-    connected: bool
-    enabled: bool
-    mode: str
-    ssid: str
+	connected: Optional[bool] = None
+	enabled: Optional[bool] = None
+	mode: Optional[str] = None
+	ssid: Optional[str] = None
+
 
 class NetworkResponse(BaseModel):
-    ethernet: EthernetResponse
-    wifi: WifiResponse
-    wifi_networks: List[Any]
+	ethernet: Optional[EthernetResponse] = None
+	wifi: Optional[WifiResponse] = None
+	wifi_networks: Optional[List[Any]] = None
 
-class PrinterResponse(BaseModel):
-    bed: BedResponse
-    diagnostics: Dict[str, Any]
-    heads: List[HeadResponse]
-    led: LedResponse
-    network: NetworkResponse
-    status: str
-    validate_header: Dict[str, Any]
-    serial_number: str
 
 class StatusRequest(BaseModel):
-    status: Literal["printing", "idle"]
+	status: str = Field(...)
+
 
 class StatusResponse(BaseModel):
-    status: str
+	status: str
+
+
+class PrinterResponse(BaseModel):
+	bed: Optional[BedResponse] = None
+	diagnostics: Optional[Dict[str, Any]] = None
+	headS: Optional[List[HeadResponse]] = Field(default=None, alias='heads')
+	led: Optional[LedResponse] = None
+	network: Optional[NetworkResponse] = None
+	status: Optional[str] = None
+	validate_header: Optional[Dict[str, Any]] = None
+	serial_number: Optional[str] = None
