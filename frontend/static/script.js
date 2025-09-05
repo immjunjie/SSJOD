@@ -67,6 +67,41 @@ window.addEventListener('DOMContentLoaded', () => {
     logDiv.innerHTML = '';
   };
 
+
+const invenioBtn    = document.getElementById('upload-invenio-btn');
+const invenioModal  = document.getElementById('invenio-modal');
+const invenioClose  = document.getElementById('invenio-modal-close');
+const invenioForm   = document.getElementById('invenio-form');
+
+if (invenioBtn && invenioModal && invenioClose) {
+
+  invenioBtn.addEventListener('click', () => {
+    invenioModal.style.display = 'block';
+  });
+
+
+  invenioClose.addEventListener('click', () => {
+    invenioModal.style.display = 'none';
+  });
+
+ 
+  window.addEventListener('click', (event) => {
+    if (event.target === invenioModal) {
+      invenioModal.style.display = 'none';
+    }
+  });
+
+  
+  if (invenioForm) {
+    invenioForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('🚧 Upload to Invenio is not yet implemented. Stay tuned!');
+      invenioModal.style.display = 'none';
+    });
+  }
+}
+
+
   function updateTimerDisplay() {
     const hrs = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
     const mins = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
